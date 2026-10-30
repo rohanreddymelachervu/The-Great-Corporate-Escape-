@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:browser": "playwright test",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write src tests *.ts index.html scripts"
+    "format": "prettier --write src tests *.ts index.html scripts",
+    "test:release": "node scripts/release-smoke.mjs",
+    "test:campaign": "node scripts/campaign-playtest.mjs"
   },
   "dependencies": {
     "phaser": "3.90.0"
@@ -18,6 +20,7 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@types/node": "^22.15.0",
+    "esbuild": "^0.25.12",
     "prettier": "^3.9.10",
     "typescript": "~5.8.3",
     "vite": "^6.3.6",

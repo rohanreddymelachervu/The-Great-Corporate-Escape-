@@ -6,6 +6,10 @@ An original, entirely client-side pixel-art stealth game about escaping a Bangal
 
 ## Play
 
+**Public game:** https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
+
+This is the verified initial Hyperagent-hosted release. Cloudflare Pages deployment is ready to set up, but is not claimed as complete.
+
 The release includes five campaign floors, a seeded daily challenge, six enemy personalities, six functional abilities, original procedural pixel art and audio, local records, medals and 12 achievements. Start with **CLOCK OUT**. Collect your badge, activate the highlighted switch with **E**, and enter the elevator. The gold arrow indicates your next objective.
 
 A production build and self-contained HTML release can be generated using the commands below. The self-contained file also works offline, including its fonts, game engine, artwork and soundtrack.
@@ -135,6 +139,9 @@ The default renderer is Phaser Canvas: for this asset style it is fast, reliable
 npm test                       # Vitest logic, maps, saves and enemy FSM
 npx playwright install chromium
 npm run test:browser           # Browser input, UI and integration smoke tests
+npm run build
+npm run test:release           # Offline, self-contained release; desktop + two touch viewports
+npm run test:campaign          # Complete all five floors with real inputs, no QA positioning
 ```
 
 On a machine with an existing Chromium, optionally set `CHROMIUM_PATH` to its executable. Otherwise Playwright uses its managed browser. The browser config starts Vite automatically.
@@ -142,8 +149,9 @@ On a machine with an existing Chromium, optionally set `CHROMIUM_PATH` to its ex
 The shipped test suite includes:
 - 289 executed unit/data tests: seeded RNG and UTC dates, geometry, anti-tunnelling collision, line of sight/FOV, A* clearance, scores/medals, storage and achievement deduplication, reachable map objectives with gates closed, valid enemy routes, detection grace, hiding/search transitions, hearing, call-specific immunity, gossip broadcasts, VPN stuns, calendar protection, distraction expiry and intern speed.
 - 13 executed Chromium browser journeys: menu and settings persistence, floor locks, achievements, collision and movement, pause/restart, a full first-floor escape using **only real keyboard movement** (no teleports), recovery and hiding, actual ability timers and effects, failure/retry, all four remaining floors' objective/exit rules, rare WFH victory, daily challenge and portrait mobile controls.
-- Tests for floors 2–5 and individual interactions use development-only QA positioning to isolate win conditions. These are **not claimed as complete no-cheat playthroughs**. All five layouts also pass collision-aware reachability tests.
-- Desktop 1280×900, mobile portrait 390×844, and landscape 844×390 visual checks. Real physical iOS/Android hardware has not been tested.
+- The isolated integration tests for floors 2–5 use development-only QA positioning. Separately, a full five-floor campaign traversal was executed against the production HTML using only movement and ability keys, with no QA positioning. Its automated controller has authored-map knowledge and opportunistically uses abilities; it is not described as a human difficulty study. All five layouts also pass collision-aware reachability tests.
+- Three additional packaged-release checks ran offline from the self-contained HTML: a full desktop keyboard escape, portrait joystick + coffee, and landscape joystick + coffee. No JavaScript errors; the mobile canvas matched its stage dimensions.
+- Desktop 1280×900, mobile portrait 390×844, and landscape 844×390 visual checks. Public HTTPS startup, movement and a narrow 390×844 pause dialog were also verified in an independent browser. Real physical iOS/Android hardware has not been tested.
 
 See `QA-REPORT.md` for final execution counts, release checks and known limitations. Browser traces/screenshots are retained only on failures and are not committed.
 
@@ -185,4 +193,4 @@ Any ordinary static HTTPS host can serve `dist`. The single-file `release/office
 
 ## Honest limitations
 
-This is a compact indie arcade release, not a long narrative RPG. Its sprites have movement bob/flip animations rather than full multi-frame directional animation sheets. Some furniture is decorative and room labels are intentionally restrained for readable stealth. Audio and mobile integration were tested in Chromium, not every browser/device. Share-sheet and clipboard permissions can vary; a selectable text fallback is provided. Progress belongs to each browser/origin, so it does not transfer between an embedded preview, public host and different devices. Daily scores are comparable starting conditions, not a verified online competition. No Cloudflare deployment is claimed until an authenticated account deploys it.
+This is a compact indie arcade release, not a long narrative RPG. Optimal, map-aware routes can clear individual floors in roughly 9–20 seconds, so the requested 1–4 minute pacing is not enforced; exploratory and collectible runs take longer. Its sprites have movement bob/flip animations rather than full multi-frame directional animation sheets. Some furniture is decorative and room labels are intentionally restrained for readable stealth. Audio and mobile integration were tested in Chromium, not every browser/device. Share-sheet and clipboard permissions can vary; a selectable text fallback is provided. Progress belongs to each browser/origin, so it does not transfer between an embedded preview, public host and different devices. Daily scores are comparable starting conditions, not a verified online competition. No Cloudflare deployment is claimed until an authenticated account deploys it.

@@ -239,6 +239,7 @@ export class OfficeScene extends Phaser.Scene {
     this.scale.on("resize", this.resize, this);
     this.resize();
     this.cameras.main.setBackgroundColor("#101625");
+    if (this.preview) this.audio.music("menu");
     if (!this.preview) {
       this.cameras.main.fadeIn(this.reducedMotion ? 0 : 450, 16, 22, 37);
       this.audio.music(this.level.id === 5 ? "final" : "game");
@@ -416,7 +417,8 @@ export class OfficeScene extends Phaser.Scene {
     if (moving) {
       this.hidden = false;
       this.active.slack = 0;
-      this.facing = { x: dx / (length || 1), y: dy / (length || 1) };
+      const directionLength = Math.hypot(dx, dy) || 1;
+      this.facing = { x: dx / directionLength, y: dy / directionLength };
       const speed = (sprint ? 246 : 155) * (yapping ? 0.72 : 1);
       this.pos = move(
         this.pos,

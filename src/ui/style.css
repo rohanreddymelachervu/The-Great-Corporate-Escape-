@@ -1348,7 +1348,8 @@ body.playing #toast {
     height: 4px;
   }
   #toast {
-    bottom: 170px !important;
+    top: 190px;
+    bottom: auto !important;
     padding: 10px 12px;
     width: 90%;
   }
@@ -1532,6 +1533,7 @@ body.playing #toast {
     height: 54px;
   }
   #toast {
+    top: auto;
     bottom: 95px !important;
     padding: 8px 12px;
     max-width: 440px;
