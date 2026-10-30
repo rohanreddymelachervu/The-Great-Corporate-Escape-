@@ -108,9 +108,9 @@ for (const viewport of [
       coffeeConsumed: true,
       canvasMatchesStage: await frame.evaluate(() => {
         const c = document.querySelector("canvas"),
-          r = document.querySelector("#stage").getBoundingClientRect();
+          r = document.querySelector("#game").getBoundingClientRect();
         return (
-          c.width === Math.round(r.width) && c.height === Math.round(r.height)
+          Math.abs(c.width - r.width) <= 1 && Math.abs(c.height - r.height) <= 1
         );
       }),
       errors,

@@ -1,3 +1,45 @@
+# Version 1.1 QA — Readable Layout + HR Fun Friday
+
+Updated 30 October 2026 in response to the user's overlap/readability feedback.
+
+## Current verified release
+
+- Updated existing preview: https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
+- GitHub Pages-ready build: docs/index.html and docs/.nojekyll in the same repository.
+- Pages publication is pending owner authentication / enabling main /docs. No Pages URL is claimed.
+- The Pages HTML exactly matches the tested offline game. SHA-256: fb6ae57098639e4cd3e623a6dc3c1d570645498a37e964a82c1efad891fd0f6a.
+
+## Changed and exercised
+
+- Separate layout regions for map, current objective/status rail, notification/dialogue area and controls.
+- One current objective and one nearby NPC speaker. Full map speech bubbles removed; only two nearby short NPC labels remain.
+- Only unlocked abilities appear. Touch controls stay outside the game viewport, not over characters or objectives.
+- Automatic canvas resize following rail/layout changes. Mobile cameras clamp to the actual office, without a blank control-overlap area.
+- Real HR five-beat activity accessible immediately in the menu and as optional booths on floors 2, 4 and 5.
+- Start button lets the player read before timing begins. Green target display matches the actual scoring window. Three hits grant -25 BS, +1 coffee, 12s HR distraction and accuracy points; failure adds 8 BS. Booths cannot be farmed.
+- Fixed a timing-marker reset race found in browser tests. Activity key listeners and animation frames are cleaned up when closing or changing screens.
+
+## Executed final checks
+
+- Production TypeScript + Vite + standalone/Pages packaging: PASS.
+- **325 unit/data/FSM tests passed**: 100 logic, 178 level/data, 17 enemy FSM, 30 HR activity tests.
+- **20 browser journeys passed**: original 13 plus four no-overlap viewport checks and three actual HR activity success/failure/reward tests.
+- Geometry checks: 1280×900, 960×640, 390×844 portrait touch, 844×390 landscape touch. HUD, map and control rectangles are disjoint; current-objective font >=11px; ability targets >=44px; no horizontal page overflow; canvas matches its viewport within one pixel.
+- **Three offline production checks passed**: complete keyboard escape and both touch orientations; zero JavaScript errors.
+- **All five production floors completed again** with real movement/ability inputs and no QA positioning. Times: 11.5, 8.6, 16.8, 14.2, 17.1 game seconds. The automated controller has authored-map knowledge; these are not a human fun/difficulty study.
+- Published preview artifact version 4: render health PASS, zero console errors and zero failed requests. The hosted HR activity opened with the correct host, timing rail and Start Activity button.
+
+## Remaining limitations
+
+- GitHub Pages still requires its one-time owner publishing-source setting. Repository write access does not imply Pages administration or browser sign-in.
+- Physical mobile hardware and Safari/Firefox remain untested. Compact portrait/landscape status rails may scroll for unusually long messages, rather than overlap the map.
+- Optimal map-aware runs remain very short; additional human pacing/difficulty testing is still useful.
+- Local progression and honor-system daily scores remain unchanged. No backend or online leaderboard.
+
+---
+
+## Historical version 1.0 QA record
+
 # Release QA — The Great Office Escape: 4:59 PM
 
 Release date: 30 October 2026.

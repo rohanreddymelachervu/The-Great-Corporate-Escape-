@@ -28,6 +28,10 @@ html +=
   "\n<!-- Bundled third-party notices\n" + notices.join("\n\n") + "\n-->\n";
 await mkdir("release", { recursive: true });
 await writeFile("release/office-escape.html", html);
+// GitHub Pages can publish main /docs without workflow-token permissions.
+await mkdir("docs", { recursive: true });
+await writeFile("docs/index.html", html);
+await writeFile("docs/.nojekyll", "");
 console.log(
   "Self-contained release:",
   Buffer.byteLength(html),

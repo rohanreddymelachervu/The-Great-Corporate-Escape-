@@ -82,7 +82,14 @@
               ><button id="daily-btn" class="secondary">
                 DAILY ESCAPE <span>↻</span>
               </button>
+              <button id="fun-btn" class="fun-entry">
+                <span>HR FUN FRIDAY <b>♫</b></span>
+                <small>BONUS GAME · Clap on the beat. Keep HR happy.</small>
+              </button>
             </div>
+            <p class="escape-route">
+              Badge <span>→</span> lift switch <span>→</span> exit
+            </p>
             <div class="menu-links">
               <button id="floors-btn">CHOOSE FLOOR <span>01—05</span></button
               ><button id="achievements-btn">
@@ -104,16 +111,16 @@
             <span class="status-dot"></span> NO OVERTIME. JUST ONE MORE TRY.
           </div>
         </div>
-        <div id="hud" hidden>
+        <aside id="hud" hidden aria-label="Escape objectives and status">
           <div class="hud-top">
             <div class="floor-heading">
-              <span id="floor-num">FLOOR 01</span
-              ><strong id="floor-name">The Quick Sync</strong>
-              <div id="objectives"></div>
+              <span id="floor-num">FLOOR 01</span>
+              <strong id="floor-name">The Quick Sync</strong>
+              <div id="objectives" aria-label="Objectives"></div>
             </div>
             <div class="run-clock">
-              <small id="run-mode">FRIDAY ESCAPE</small
-              ><strong id="timer">00:00</strong>
+              <small id="run-mode">FRIDAY ESCAPE</small>
+              <strong id="timer">00:00</strong>
             </div>
             <div class="meter-group">
               <div class="meter-label">
@@ -126,40 +133,50 @@
               </div>
             </div>
           </div>
-          <div id="detection" hidden>YOU’RE BEING PERCEIVED. MOVE.</div>
-          <div class="hud-bottom">
-            <div class="field-status">
-              <span class="status-dot"></span
-              ><span id="field-status"
-                >YOU ARE PROFESSIONALLY UNAVAILABLE.</span
-              >
+          <div class="field-status">
+            <span class="status-dot"></span>
+            <span id="field-status">YOU ARE PROFESSIONALLY UNAVAILABLE.</span>
+          </div>
+          <div id="detection" hidden role="status">
+            YOU’RE BEING PERCEIVED. MOVE.
+          </div>
+          <div id="dialogue-box" hidden aria-live="polite">
+            <strong id="dialogue-speaker"></strong>
+            <p id="dialogue-text"></p>
+          </div>
+          <div id="toast" role="status" aria-live="polite" hidden>
+            <span class="toast-sigil">!</span>
+            <div>
+              <strong id="toast-title"></strong>
+              <p id="toast-text"></p>
             </div>
-            <div id="ability-bar"></div>
-            <div class="desktop-hint">
+          </div>
+        </aside>
+        <!-- A stage sibling: controls have their own space, never the map. -->
+        <section id="control-dock" hidden aria-label="Movement and abilities">
+          <div class="dock-main">
+            <div class="dock-label">
+              TACTICAL UNAVAILABILITY <span>YOUR UNLOCKED ABILITIES</span>
+            </div>
+            <div id="ability-bar" aria-label="Available abilities"></div>
+            <div id="desktop-hint" class="desktop-hint">
               <span>WASD / ↑↓←→</span> MOVE <span>SHIFT</span> SPRINT
               <span>E</span> INTERACT <span>ESC</span> PAUSE
             </div>
           </div>
           <div id="touch-controls">
-            <div id="joystick" aria-label="Movement joystick">
+            <div id="joystick" aria-label="Drag to move">
               <div id="stick"></div>
               <span>MOVE</span>
             </div>
             <div class="touch-actions">
-              <button id="touch-sprint" aria-label="Hold to sprint">RUN</button
-              ><button id="touch-interact" aria-label="Interact">
+              <button id="touch-sprint" aria-label="Hold to sprint">RUN</button>
+              <button id="touch-interact" aria-label="Interact">
                 E<br /><small>ACT</small>
               </button>
             </div>
           </div>
-        </div>
-        <div id="toast" role="status" aria-live="polite" hidden>
-          <span class="toast-sigil">!</span>
-          <div>
-            <strong id="toast-title"></strong>
-            <p id="toast-text"></p>
-          </div>
-        </div>
+        </section>
         <div id="modal-root" hidden></div>
       </main>
       <footer id="footer">

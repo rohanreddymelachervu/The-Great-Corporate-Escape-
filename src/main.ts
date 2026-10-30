@@ -12,6 +12,8 @@ import { dailySeed, hash } from "./game/logic";
 import { LEVELS } from "./game/levels";
 import { load, persist, record } from "./game/progression";
 import type { Ability, Result } from "./game/types";
+import { playFunFriday } from "./ui/fun-ui";
+import type { FunOutcome } from "./ui/fun-ui";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
 const save = load(),
@@ -42,14 +44,32 @@ const game = new Phaser.Game({
   input: { activePointers: 4 },
 });
 function resizeGame() {
-  const r = $("#stage").getBoundingClientRect();
-  game.scale.resize(Math.round(r.width), Math.round(r.height));
+  const r = $("#game").getBoundingClientRect();
+  const width = Math.floor(r.width),
+    height = Math.floor(r.height);
+  if (
+    width > 0 &&
+    height > 0 &&
+    (game.scale.width !== width || game.scale.height !== height)
+  )
+    game.scale.resize(width, height);
 }
+// Rails can change height when feedback appears. Keep the actual canvas viewport exact.
+let resizeFrame = 0;
+new ResizeObserver(() => {
+  cancelAnimationFrame(resizeFrame);
+  resizeFrame = requestAnimationFrame(resizeGame);
+}).observe($("#game"));
 let playing = false,
   paused = false,
   modalKind = "",
   lastResult: Result | null = null,
   toastTimer: ReturnType<typeof setTimeout> | null = null;
+let cleanupFun: (() => void) | null = null;
+function stopFun() {
+  cleanupFun?.();
+  cleanupFun = null;
+}
 const touch =
   matchMedia("(pointer:coarse)").matches || navigator.maxTouchPoints > 0;
 if (touch) document.body.classList.add("touch");
@@ -99,6 +119,7 @@ function resume() {
   scene.touch = { x: 0, y: 0, sprint: false };
 }
 function closeModal() {
+  stopFun();
   const kind = modalKind;
   if (playing && scene.ended && lastResult && kind !== "result") {
     showResult(scene.won, lastResult, [], false);
@@ -111,6 +132,7 @@ function closeModal() {
   $("#game").focus();
 }
 function modal(kind: string, html: string, small = false) {
+  stopFun();
   if (playing && !scene.ended) pause();
   modalKind = kind;
   $("#toast").hidden = true;
@@ -118,11 +140,13 @@ function modal(kind: string, html: string, small = false) {
     `<section class="modal ${small ? "modal-small" : ""}" role="dialog" aria-modal="true" aria-label="${kind}">${kind === "result" ? "" : '<button class="close" aria-label="Close">×</button>'}${html}</section>`;
   $("#modal-root").hidden = false;
   $("#modal-root .close")?.addEventListener("click", closeModal);
-  requestAnimationFrame(() =>
-    $("#modal-root").querySelector<HTMLElement>("button,input")?.focus(),
-  );
+  if (kind !== "fun")
+    requestAnimationFrame(() =>
+      $("#modal-root").querySelector<HTMLElement>("button,input")?.focus(),
+    );
 }
 function start(level: number, daily = false) {
+  stopFun();
   audio.resume();
   audio.unlock();
   playing = true;
@@ -133,6 +157,7 @@ function start(level: number, daily = false) {
   $("#modal-root").innerHTML = "";
   $("#menu").hidden = true;
   $("#hud").hidden = false;
+  $("#control-dock").hidden = false;
   $("#pause-btn").hidden = false;
   $("#footer").hidden = true;
   $("#toast").hidden = true;
@@ -160,6 +185,7 @@ function home() {
   } else goHome();
 }
 function goHome() {
+  stopFun();
   audio.resume();
   playing = false;
   paused = false;
@@ -168,6 +194,7 @@ function goHome() {
   $("#modal-root").innerHTML = "";
   $("#menu").hidden = false;
   $("#hud").hidden = true;
+  $("#control-dock").hidden = true;
   $("#pause-btn").hidden = true;
   $("#footer").hidden = false;
   $("#toast").hidden = true;
@@ -182,6 +209,7 @@ function buildAbilities(level: number) {
   $("#ability-bar").innerHTML = (
     Object.entries(ABILITIES) as [Ability, (typeof ABILITIES)[Ability]][]
   )
+    .filter(([, d]) => level >= d.level)
     .map(
       ([id, d]) =>
         `<button class="ability ${level < d.level ? "locked" : ""}" data-ability="${id}" ${level < d.level ? "disabled" : ""} title="${d.description}" aria-label="${d.name}"><kbd>${d.key}</kbd><span>${d.short}<small id="ability-${id}">${level < d.level ? "FLOOR " + d.level : "READY"}</small></span></button>`,
@@ -207,34 +235,42 @@ window.addEventListener("office:hud", ((e: CustomEvent) => {
   $("#bs-bar").style.width = h.bs + "%";
   $("#bs-bar").style.background = h.bs > 70 ? "#ff667f" : "#ff937f";
   $("#stamina-bar").style.width = h.stamina + "%";
-  $("#objectives").innerHTML =
-    h.objectives
-      .map(
-        (o: { done: boolean; label: string }) =>
-          `<div class="${o.done ? "done" : ""}"><span class="objective-check">${o.done ? "✓" : "□"}</span>${o.label}</div>`,
-      )
-      .join("") +
-    (h.ready ? '<div style="color:#a9f4ce">↗ REACH THE ELEVATOR</div>' : "");
+  const nextObjective = h.objectives.find((o: { done: boolean }) => !o.done);
+  const completedObjectives = h.objectives.filter(
+    (o: { done: boolean }) => o.done,
+  ).length;
+  $("#objectives").innerHTML = nextObjective
+    ? `<div class="current-objective"><span class="objective-check">${completedObjectives + 1}.</span>${nextObjective.label}</div>`
+    : '<div class="current-objective" style="color:#a9f4ce">3. REACH THE ELEVATOR ↗</div>';
   $("#detection").hidden = h.suspicion < 0.25 || h.hidden;
   $("#detection").textContent =
     h.suspicion > 0.9
       ? "MEETING INCOMING. BREAK LINE OF SIGHT."
       : "YOU’RE BEING PERCEIVED. MOVE.";
-  $("#field-status").textContent = h.hidden
-    ? "HIDDEN · DECOMPRESSING. −BS."
-    : h.active.slack
-      ? "BUSY ON SLACK. DON’T MOVE."
-      : h.active.call
-        ? "ON A VERY REAL CLIENT CALL."
-        : h.active.calendar
-          ? "CALENDAR: MEETINGS DECLINED."
-          : h.active.vpn
-            ? "VPN DOWN. CORPORATE ACTIVITY PAUSED."
-            : h.target
-              ? "E · " + h.target.toUpperCase()
-              : h.ready
-                ? "EXIT IS OPEN. YOUR WEEKEND IS THIS WAY."
-                : "FOLLOW THE GOLD ARROW · BADGE → SWITCH → EXIT";
+  $("#dialogue-box").hidden = !h.dialogue || !!h.context;
+  if (h.dialogue) {
+    $("#dialogue-speaker").textContent = h.dialogue.speaker;
+    $("#dialogue-text").textContent = h.dialogue.text;
+    $("#dialogue-speaker").style.color =
+      "#" + h.dialogue.color.toString(16).padStart(6, "0");
+  }
+  $("#field-status").textContent =
+    h.context ||
+    (h.hidden
+      ? "HIDDEN · DECOMPRESSING. −BS."
+      : h.active.slack
+        ? "BUSY ON SLACK. DON’T MOVE."
+        : h.active.call
+          ? "ON A VERY REAL CLIENT CALL."
+          : h.active.calendar
+            ? "CALENDAR: MEETINGS DECLINED."
+            : h.active.vpn
+              ? "VPN DOWN. CORPORATE ACTIVITY PAUSED."
+              : h.target
+                ? "E · " + h.target.toUpperCase()
+                : h.ready
+                  ? "EXIT IS OPEN. YOUR WEEKEND IS THIS WAY."
+                  : "Follow the gold arrow. Badge → lift switch → exit.");
   for (const [id, d] of Object.entries(ABILITIES) as [
     Ability,
     (typeof ABILITIES)[Ability],
@@ -286,7 +322,7 @@ function showResult(
     : VICTORY_LINES[hash(result.seed) % VICTORY_LINES.length];
   modal(
     "result",
-    `<div class="result-hero"><div class="modal-eyebrow">${result.daily ? "DAILY ESCAPE · " + result.seed : win ? "FRIDAY. FINALLY." : "MEETING ACCEPTED. INVOLUNTARILY."}</div><div class="result-icon ${win ? "" : "fail"}">${win ? "↗" : "∞"}</div><h2>${win ? (final ? "YOU HAVE A LIFE." : "OUT OF OFFICE.") : "PROMOTED TO<br>STAYING LATE."}</h2><p>${win ? line : "Congratulations! You’re now Senior Vice President of Staying Late. Your compensation: exposure to another all-hands."}</p>${win ? `<div class="medal">${result.medal.toUpperCase()}</div><div class="score-large">${result.score.toLocaleString()}<small style="font-size:10px;letter-spacing:1px;margin-left:8px">PTS</small></div>` : '<div class="medal">YOUR WEEKEND DESERVES A RETRY.</div>'}<div class="result-stats"><div><b>${formatTime(result.time)}</b><small>TIME</small></div><div><b>${result.spots}</b><small>SPOTTED</small></div><div><b>${result.bs}%</b><small>FINAL BS</small></div><div><b>${result.collectibles}</b><small>LAPTOPS</small></div></div>${newly.length ? `<div class="result-achievements">${newly.map((id) => "UNLOCKED · " + ACHIEVEMENTS.find((a) => a.id === id)?.name).join("<br>")}</div>` : ""}${alt ? "<p>Purple exit approved. Remote work is a state of escape.</p>" : ""}<div class="modal-actions" style="justify-content:center"><button id="result-primary" class="primary">${!win ? "RETRY INSTANTLY ↻" : result.daily || result.level === 5 ? "PLAY AGAIN ↻" : "NEXT FLOOR ↗"}</button><button id="result-retry" class="secondary">${win ? "REPLAY FLOOR" : "MAIN MENU"}</button>${win ? '<button id="share-btn" class="secondary">SHARE RESULT ↗</button>' : '<button id="result-tip" class="secondary">SURVIVAL TIPS</button>'}<button id="result-home" class="secondary">${win ? "MAIN MENU" : "CHOOSE FLOOR"}</button></div><div class="share-status" id="share-status"></div></div>`,
+    `<div class="result-hero"><div class="modal-eyebrow">${result.daily ? "DAILY ESCAPE · " + result.seed : win ? "FRIDAY. FINALLY." : "MEETING ACCEPTED. INVOLUNTARILY."}</div><div class="result-icon ${win ? "" : "fail"}">${win ? "↗" : "∞"}</div><h2>${win ? (final ? "YOU HAVE A LIFE." : "OUT OF OFFICE.") : "PROMOTED TO<br>STAYING LATE."}</h2><p>${win ? line : "Congratulations! You’re now Senior Vice President of Staying Late. Your compensation: exposure to another all-hands."}</p>${win ? `<div class="medal">${result.medal.toUpperCase()}</div><div class="score-large">${result.score.toLocaleString()}<small style="font-size:10px;letter-spacing:1px;margin-left:8px">PTS</small></div>` : '<div class="medal">YOUR WEEKEND DESERVES A RETRY.</div>'}${result.funScore ? `<p class="result-achievements">HR FUN BONUS · +${result.funScore * 2} POINTS</p>` : ""}<div class="result-stats"><div><b>${formatTime(result.time)}</b><small>TIME</small></div><div><b>${result.spots}</b><small>SPOTTED</small></div><div><b>${result.bs}%</b><small>FINAL BS</small></div><div><b>${result.collectibles}</b><small>LAPTOPS</small></div></div>${newly.length ? `<div class="result-achievements">${newly.map((id) => "UNLOCKED · " + ACHIEVEMENTS.find((a) => a.id === id)?.name).join("<br>")}</div>` : ""}${alt ? "<p>Purple exit approved. Remote work is a state of escape.</p>" : ""}<div class="modal-actions" style="justify-content:center"><button id="result-primary" class="primary">${!win ? "RETRY INSTANTLY ↻" : result.daily || result.level === 5 ? "PLAY AGAIN ↻" : "NEXT FLOOR ↗"}</button><button id="result-retry" class="secondary">${win ? "REPLAY FLOOR" : "MAIN MENU"}</button>${win ? '<button id="share-btn" class="secondary">SHARE RESULT ↗</button>' : '<button id="result-tip" class="secondary">SURVIVAL TIPS</button>'}<button id="result-home" class="secondary">${win ? "MAIN MENU" : "CHOOSE FLOOR"}</button></div><div class="share-status" id="share-status"></div></div>`,
     false,
   );
   $("#result-primary").onclick = () =>
@@ -376,7 +412,7 @@ function applySettings() {
 function how(afterFail = false) {
   modal(
     "how",
-    `<div class="modal-eyebrow">OBJECTIVE: LEAVE. DO NOT EXPLAIN.</div><h2>THE SURVIVAL GUIDE.</h2><div class="guide-grid"><div class="guide-block"><strong>01 · GET OUT</strong><p>Follow the gold arrow. Collect your badge, use E at the mint switch, then enter the elevator. Purple WFH exits need a rare house token + ability 6. Each floor is a fresh 1–4 minute escape.</p></div><div class="guide-block"><strong>02 · DON’T GET PERCEIVED</strong><p>Colored cones show vision. Walls and furniture block sight. A filling ring gives you a grace period. Break sight to lose pursuit. Sprinting is loud. Interns are fast, not omniscient.</p></div><div class="guide-block"><strong>03 · BS IS NOT HEALTHCARE</strong><p>Getting caught adds Corporate BS. At 100%, you stay late. E at purple hide rings to disappear and decompress. Coffee pickups and pantry stations reduce BS. Three seconds of grace after a catch.</p></div><div class="guide-block"><strong>04 · PRACTICE STRATEGIC UNAVAILABILITY</strong><p>1 throws coffee ahead. 2 fakes a call. 3 pretends to work (stay still). 4 blocks meetings. 5 disconnects VPN. 6 approves WFH. Abilities unlock by floor. Mouse over a button for details.</p></div></div><p><kbd>WASD</kbd> / arrows: move · <kbd>SHIFT</kbd> sprint · <kbd>E</kbd> / Space interact · <kbd>1–6</kbd> abilities · <kbd>ESC</kbd> pause · <kbd>M</kbd> mute. Touch: drag joystick, hold RUN, tap ACT. Landscape gives a wider view.</p><details><summary style="font-size:10px;color:#a9f4ce;cursor:pointer">KNOW YOUR CORPORATE THREATS ↓</summary>${Object.values(
+    `<div class="modal-eyebrow">OBJECTIVE: LEAVE. DO NOT EXPLAIN.</div><h2>THE SURVIVAL GUIDE.</h2><div class="guide-grid"><div class="guide-block"><strong>01 · GET OUT</strong><p>Follow the gold arrow. Collect your badge, use E at the mint switch, then enter the elevator. Purple WFH exits need a rare house token + ability 6. Each floor is a short, replayable escape.</p></div><div class="guide-block"><strong>02 · DON’T GET PERCEIVED</strong><p>Colored cones show vision. Walls and furniture block sight. A filling ring gives you a grace period. Break sight to lose pursuit. Sprinting is loud. Interns are fast, not omniscient.</p></div><div class="guide-block"><strong>03 · BS IS NOT HEALTHCARE</strong><p>Getting caught adds Corporate BS. At 100%, you stay late. E at purple hide rings to disappear and decompress. Coffee pickups and pantry stations reduce BS. Three seconds of grace after a catch.</p></div><div class="guide-block"><strong>04 · USE YOUR TOOLS</strong><p>1 throws coffee ahead. 2 fakes a call. 3 pretends to work (stay still). 4 blocks meetings. 5 disconnects VPN. 6 approves WFH. Abilities unlock by floor. Mouse over a button for details.</p></div><div class="guide-block"><strong>05 · HACK HR’S FUN FRIDAY</strong><p>Find the pink HR Fun Activity booth on floors 2, 4 and 5. Press E and clap in the mint timing zone. Three of five hits reduce BS by 25, refill one coffee and distract HR for 12 seconds. Practice from the main menu.</p></div></div><p><kbd>WASD</kbd> / arrows: move · <kbd>SHIFT</kbd> sprint · <kbd>E</kbd> / Space interact · <kbd>1–6</kbd> abilities · <kbd>ESC</kbd> pause · <kbd>M</kbd> mute. Touch: drag joystick, hold RUN, tap ACT. Landscape gives a wider view.</p><details><summary style="font-size:10px;color:#a9f4ce;cursor:pointer">KNOW YOUR CORPORATE THREATS ↓</summary>${Object.values(
       ENEMIES,
     )
       .map(
@@ -404,6 +440,52 @@ function pauseMenu() {
   $("#pause-help").onclick = () => how();
   $("#pause-home").onclick = home;
 }
+function launchFun(practice: boolean, id?: string) {
+  modal("fun", '<div id="fun-root"></div>', true);
+  let outcome: FunOutcome | null = null;
+  const sprite = scene.textures.exists("hr")
+    ? scene.textures.getBase64("hr")
+    : "";
+  cleanupFun = playFunFriday({
+    root: $("#fun-root"),
+    audio,
+    sprite,
+    practice,
+    onScored: (result, seconds) => {
+      outcome = result;
+      if (!practice && id) scene.resolveFun(id, result, seconds);
+      else {
+        try {
+          const best = Math.max(
+            Number(localStorage.getItem("office-fun-best")) || 0,
+            result.score,
+          );
+          localStorage.setItem("office-fun-best", String(best));
+          $("#fun-score").textContent += ` · BEST ${best}`;
+        } catch {
+          /* Gameplay survives unavailable storage. */
+        }
+      }
+    },
+    onReturn: () => {
+      closeModal();
+      if (!practice && outcome)
+        toast(
+          outcome.success
+            ? "CULTURE SUCCESSFULLY HACKED"
+            : "HR HAS NOTED YOUR AUTHENTICITY",
+          outcome.success
+            ? "−25 BS · +1 coffee · HR distracted for 12s. Get moving."
+            : "+8 BS. Nobody can clap product-market fit into existence.",
+          4,
+        );
+    },
+  });
+}
+window.addEventListener("office:fun", ((e: CustomEvent) => {
+  if (playing && !paused) launchFun(false, e.detail.id);
+}) as EventListener);
+$("#fun-btn").onclick = () => launchFun(true);
 $("#play-btn").onclick = () => start(save.unlocked);
 $("#daily-btn").onclick = () => {
   const seed = dailySeed(),
@@ -470,7 +552,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden && playing && !scene.ended) pauseMenu();
+  if (document.hidden && playing && !scene.ended && !paused) pauseMenu();
 });
 window.addEventListener("blur", () => {
   scene.touch = { x: 0, y: 0, sprint: false };

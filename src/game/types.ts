@@ -21,7 +21,7 @@ export type Item = Point & {
 };
 export type Interaction = Point & {
   id: string;
-  type: "hide" | "coffee" | "distraction" | "switch";
+  type: "hide" | "coffee" | "distraction" | "switch" | "fun";
   label: string;
   hint: string;
   target?: Kind;
@@ -76,6 +76,7 @@ export interface Result {
   distractions: number;
   score: number;
   medal: string;
+  funScore?: number;
   daily: boolean;
   seed: string;
 }

@@ -1002,3 +1002,22 @@ export const LEVELS: Level[] = [
     ],
   },
 ];
+
+// Optional HR activities are real mini-games, not compulsory fetch objectives.
+// Their locations are in open, collision-tested pantry/wellness spaces.
+const funStations: Record<number, { x: number; y: number }> = {
+  2: { x: 350, y: 600 },
+  4: { x: 250, y: 600 },
+  5: { x: 280, y: 680 },
+};
+for (const level of LEVELS) {
+  const point = funStations[level.id];
+  if (point)
+    level.interactions.push({
+      id: `l${level.id}-fun-friday`,
+      type: "fun",
+      ...point,
+      label: "HR Fun Friday · Clap for the Culture",
+      hint: "E · HR activity. 3 good claps = −25 BS, +1 coffee, 12s distraction.",
+    });
+}

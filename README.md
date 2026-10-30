@@ -8,11 +8,18 @@ An original, entirely client-side pixel-art stealth game about escaping a Bangal
 
 **Public game:** https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
 
-This is the verified initial Hyperagent-hosted release. Cloudflare Pages deployment is ready to set up, but is not claimed as complete.
+This is the verified Hyperagent preview of version 1.1. The GitHub Pages production file is also committed at docs/index.html. Pages publication is waiting for the repository owner to enable main /docs in repository settings; it is not yet claimed live.
 
 The release includes five campaign floors, a seeded daily challenge, six enemy personalities, six functional abilities, original procedural pixel art and audio, local records, medals and 12 achievements. Start with **CLOCK OUT**. Collect your badge, activate the highlighted switch with **E**, and enter the elevator. The gold arrow indicates your next objective.
 
 A production build and self-contained HTML release can be generated using the commands below. The self-contained file also works offline, including its fonts, game engine, artwork and soundtrack.
+
+## Version 1.1 — clear layout and actual HR fun
+
+- The map, objective/status rail, notifications, dialogue and controls now occupy separate layout regions. No HUD cards float over gameplay. Only the next objective, unlocked abilities and one nearby speaker are shown.
+- Portrait and landscape touch layouts have separate controls and a following camera. A ResizeObserver keeps the canvas matched to its own viewport.
+- **HR Fun Friday: Clap for the Culture** is a real five-beat timing game. Play the bonus from the main menu, or use E at pink HR booths on floors 2, 4 and 5.
+- Three good claps grant −25 BS, one coffee, a 12-second HR distraction, and an accuracy-based score bonus. Failure adds 8 BS. Booths are single-use per floor. The office pauses, but activity time counts toward the run. Practice has its own local high score and does not modify campaign progress.
 
 ## Development
 
@@ -35,6 +42,7 @@ npm run preview
 Outputs:
 - `dist/`: conventional static website for Cloudflare Pages and other static hosts.
 - `release/office-escape.html`: self-contained, single-file game with no network dependencies.
+- `docs/index.html` and `docs/.nojekyll`: GitHub Pages-ready production output. Unlike other generated output, docs is intentionally committed for branch-based Pages hosting.
 
 `dist` and `release` are generated and intentionally gitignored. Rebuild them from source. The game is approximately 1.9 MB uncompressed; most of that is Phaser and bundled open-source fonts. HTTP compression reduces the transfer considerably. Vite's large-chunk warning is expected: this project intentionally bundles the engine to eliminate a runtime CDN dependency.
 
@@ -98,7 +106,7 @@ Pantry coffee restores 18 BS, fills stamina and adds a cup, with a 22s station c
 
 ## Scores, medals and daily challenges
 
-Score = 5000 + max(0, 2 × floor par − seconds) × 35 + 2500 if never spotted + 1500 if never caught + 300 per laptop + 150 per distraction (max 6) − 18 per final BS − 180 per spotting, rounded with a 100-point minimum.
+Score = 2 × HR activity accuracy points + 5000 + max(0, 2 × floor par − seconds) × 35 + 2500 if never spotted + 1500 if never caught + 300 per laptop + 150 per distraction (max 6) − 18 per final BS − 180 per spotting, rounded with a 100-point minimum.
 
 - **Ghost Employee:** no sightings or catches, and within 1.5× the floor par time.
 - **Gold:** 9500+ if not eligible for Ghost.
@@ -120,11 +128,13 @@ src/
     logic.ts            Swept circle collision, LOS, A*, PRNG, score and medal functions
     levels.ts           Five hand-authored maps and their interaction/patrol data
     catalog.ts          Enemy tuning, comedy, events, ability and achievement definitions
+    fun.ts              Pure deterministic HR timing game and reward rules
     progression.ts      Versioned LocalStorage, personal bests, unlocks and settings
     types.ts            Shared typed data contracts
   art/art.ts            Original pixel sprites and office renderer; static art is baked once
   audio/audio.ts        Original WebAudio sequencer, synthesizers, foley and mix controls
-  ui/style.css          Responsive HUD, menus, dialogs and mobile controls
+  ui/fun-ui.ts          Accessible, keyboard/touch HR activity with cleanup-safe timers
+  ui/style.css          Responsive non-overlapping information rail, map and control dock
   ui/fonts.css          Self-contained font faces; no external font requests
 scripts/standalone.mjs   Inlines Vite's tested output into a single portable HTML file
 ```
@@ -147,15 +157,29 @@ npm run test:campaign          # Complete all five floors with real inputs, no Q
 On a machine with an existing Chromium, optionally set `CHROMIUM_PATH` to its executable. Otherwise Playwright uses its managed browser. The browser config starts Vite automatically.
 
 The shipped test suite includes:
-- 289 executed unit/data tests: seeded RNG and UTC dates, geometry, anti-tunnelling collision, line of sight/FOV, A* clearance, scores/medals, storage and achievement deduplication, reachable map objectives with gates closed, valid enemy routes, detection grace, hiding/search transitions, hearing, call-specific immunity, gossip broadcasts, VPN stuns, calendar protection, distraction expiry and intern speed.
-- 13 executed Chromium browser journeys: menu and settings persistence, floor locks, achievements, collision and movement, pause/restart, a full first-floor escape using **only real keyboard movement** (no teleports), recovery and hiding, actual ability timers and effects, failure/retry, all four remaining floors' objective/exit rules, rare WFH victory, daily challenge and portrait mobile controls.
+- 325 executed unit/data tests: seeded RNG and UTC dates, geometry, anti-tunnelling collision, line of sight/FOV, A* clearance, scores/medals, storage and achievement deduplication, reachable map objectives with gates closed, valid enemy routes, detection grace, hiding/search transitions, hearing, call-specific immunity, gossip broadcasts, VPN stuns, calendar protection, distraction expiry and intern speed.
+- 20 executed Chromium browser journeys: menu and settings persistence, floor locks, achievements, collision and movement, pause/restart, a full first-floor escape using **only real keyboard movement** (no teleports), recovery and hiding, actual ability timers and effects, failure/retry, all four remaining floors' objective/exit rules, rare WFH victory, daily challenge and portrait mobile controls.
 - The isolated integration tests for floors 2–5 use development-only QA positioning. Separately, a full five-floor campaign traversal was executed against the production HTML using only movement and ability keys, with no QA positioning. Its automated controller has authored-map knowledge and opportunistically uses abilities; it is not described as a human difficulty study. All five layouts also pass collision-aware reachability tests.
+- Seven added browser journeys verify disjoint HUD/map/control bounds at four viewport sizes, HR practice scoring, in-world rewards/pausing, and failure consequences. Thirty pure HR timing/reward tests are included in the unit total.
 - Three additional packaged-release checks ran offline from the self-contained HTML: a full desktop keyboard escape, portrait joystick + coffee, and landscape joystick + coffee. No JavaScript errors; the mobile canvas matched its stage dimensions.
 - Desktop 1280×900, mobile portrait 390×844, and landscape 844×390 visual checks. Public HTTPS startup, movement and a narrow 390×844 pause dialog were also verified in an independent browser. Real physical iOS/Android hardware has not been tested.
 
 See `QA-REPORT.md` for final execution counts, release checks and known limitations. Browser traces/screenshots are retained only on failures and are not committed.
 
-## Deploy free to Cloudflare Pages
+## Deploy free to GitHub Pages
+
+The same repository now contains a ready-to-publish docs folder. No additional repository, external account, workflow permission or API token is needed for branch-based publication.
+
+1. Open this repository on GitHub and go to **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select branch **main**, folder **/docs**, then **Save**.
+4. GitHub will display the actual HTTPS address when the Pages build completes. Open that returned address and verify CLOCK OUT, movement, HR FUN FRIDAY and pause.
+
+The connected GitHub integration can commit the source and production files, but it does not expose Pages administration and the browser session is not signed in. This one-time owner setting remains pending; no GitHub Pages URL or deployment success is invented. Do not change repository visibility without the owner’s separate consent if GitHub requires it.
+
+Future source changes: run npm run build, test the game, and commit the regenerated docs/index.html together with source. GitHub Pages will republish that branch automatically once enabled. The self-contained Pages file avoids repository-subpath asset failures.
+
+## Optional: Cloudflare Pages
 
 Cloudflare is not connected in the build environment, so no Cloudflare production deployment is claimed.
 

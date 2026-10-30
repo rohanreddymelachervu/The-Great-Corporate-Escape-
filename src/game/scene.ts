@@ -18,6 +18,7 @@ import {
   visible,
 } from "./logic";
 import { OfficeEnemy } from "./enemy";
+import type { FunFriday } from "./fun";
 import type {
   Ability,
   Interaction,
@@ -72,6 +73,8 @@ export class OfficeScene extends Phaser.Scene {
   accumulator = 0;
   bluffs = 0;
   coffeeUsed = 0;
+  funScore = 0;
+  funCompleted = new Set<string>();
   internTime = 0;
   listenStep = 0;
   nonRequiredInteractions = 0;
@@ -132,6 +135,8 @@ export class OfficeScene extends Phaser.Scene {
     this.accumulator = 0;
     this.bluffs = 0;
     this.coffeeUsed = 0;
+    this.funScore = 0;
+    this.funCompleted = new Set();
     this.internTime = 0;
     this.listenStep = 0;
     this.nonRequiredInteractions = 0;
@@ -172,6 +177,20 @@ export class OfficeScene extends Phaser.Scene {
     this.drawExit(this.level.exit, false);
     if (this.level.altExit) this.drawExit(this.level.altExit, true);
     for (const item of this.level.items) this.drawItem(item);
+    for (const point of this.level.interactions.filter(
+      (i) => i.type === "fun",
+    )) {
+      this.add
+        .text(point.x, point.y - 35, "HR FUN ACTIVITY", {
+          fontFamily: "monospace",
+          fontSize: "11px",
+          color: "#ffd1ea",
+          backgroundColor: "#35283f",
+          padding: { x: 6, y: 4 },
+        })
+        .setOrigin(0.5)
+        .setDepth(23);
+    }
     for (const gate of this.level.gates) {
       const obj = this.add
         .rectangle(
@@ -191,7 +210,7 @@ export class OfficeScene extends Phaser.Scene {
       .setScale(1.45)
       .setDepth(45);
     this.add
-      .text(this.pos.x, this.pos.y + 30, "YOU · WEEKEND PENDING", {
+      .text(this.pos.x, this.pos.y + 27, "YOU", {
         fontFamily: "monospace",
         fontSize: "10px",
         color: "#b6f9d8",
@@ -204,6 +223,22 @@ export class OfficeScene extends Phaser.Scene {
     this.enemies = this.level.enemies.map(
       (e) => new OfficeEnemy(this, e, this.random),
     );
+    const shortNames = {
+      manager: "MANAGER",
+      hr: "HR",
+      intern: "INTERN",
+      founder: "FOUNDER",
+      pm: "PM",
+      gossip: "GOSSIP",
+    };
+    this.enemies.forEach((e) =>
+      e.label.setText(shortNames[e.kind]).setFontSize(11),
+    );
+    if (this.preview)
+      this.enemies.forEach((e) => {
+        e.label.setVisible(false);
+        e.bubble.setVisible(false);
+      });
     this.hint = this.add
       .text(0, 0, "", {
         fontFamily: "monospace",
@@ -255,18 +290,18 @@ export class OfficeScene extends Phaser.Scene {
     const c = this.cameras.main,
       w = this.scale.width,
       h = this.scale.height;
-    const portrait = w / h < 0.9;
-    const follow = portrait || matchMedia("(pointer:coarse)").matches;
+    const portrait = w < 650;
+    const follow = w < 850 || matchMedia("(pointer:coarse)").matches;
     const zoom = this.preview
       ? Math.max(w / this.level.width, h / this.level.height)
       : follow
         ? portrait
-          ? Math.min(0.92, Math.max(0.72, w / 500))
+          ? 0.88
           : 0.9
         : Math.min(w / this.level.width, h / this.level.height);
     c.setZoom(zoom);
     if (follow && !this.preview) {
-      c.setBounds(-25, -40, this.level.width + 50, this.level.height + 140);
+      c.setBounds(0, 0, this.level.width, this.level.height);
       c.startFollow(this.player, true, 0.1, 0.1);
     } else {
       c.stopFollow();
@@ -359,6 +394,7 @@ export class OfficeScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     const cont = this.add.container(item.x, item.y, [g, label]).setDepth(22);
+    label.setVisible(item.kind === "badge" || item.kind === "wfh");
     this.itemObjects.set(item.id, cont);
   }
   update(time: number, delta: number) {
@@ -499,6 +535,15 @@ export class OfficeScene extends Phaser.Scene {
         },
       }),
     );
+    const readableEnemies = [...this.enemies]
+      .sort((a, b) => dist(a, this.pos) - dist(b, this.pos))
+      .slice(0, 2);
+    for (const enemy of this.enemies) {
+      enemy.bubble.setVisible(false);
+      enemy.label.setVisible(
+        readableEnemies.includes(enemy) && dist(enemy, this.pos) < 230,
+      );
+    }
     if (
       this.eventZone &&
       this.elapsed < this.eventUntil &&
@@ -584,34 +629,32 @@ export class OfficeScene extends Phaser.Scene {
               : 1,
       );
     this.player.setDepth(45 + this.pos.y / 1000);
-    if (this.target) {
-      this.hint
-        .setPosition(
-          clamp(this.pos.x, 125, this.level.width - 125),
-          this.pos.y - 32,
-        )
-        .setText(
-          this.hidden
-            ? "E · Leave hiding spot"
-            : this.used.has(this.target.id)
-              ? "✓ " + this.target.label
-              : this.target.hint,
-        )
-        .setVisible(true);
-    } else if (atExit || atAlt) {
-      this.hint
-        .setPosition(this.pos.x, this.pos.y - 34)
-        .setText(
-          !ready
-            ? "Badge + switch first. Your weekend needs approvals."
+    // Context belongs in the information rail, never over sprites or cones.
+    this.hintText = this.hidden
+      ? "E · Leave the hiding spot"
+      : this.target
+        ? this.used.has(this.target.id)
+          ? "✓ " + this.target.label
+          : this.target.type === "fun"
+            ? "E · Start HR Fun Friday (optional)"
+            : "E · " + this.target.label
+        : atExit || atAlt
+          ? !ready
+            ? "Badge and lift switch first. Follow the gold arrow."
             : this.exitBlock > 0
-              ? "PM approval… " + Math.ceil(this.exitBlock) + "s"
+              ? "PM approval in " + Math.ceil(this.exitBlock) + "s"
               : atAlt && !this.wfhActive
-                ? "Use ability 6 · Emergency WFH"
-                : "Freedom!",
-        )
-        .setVisible(true);
-    } else this.hint.setVisible(false);
+                ? "Use 6 · Emergency WFH to approve this exit."
+                : "Freedom is this way."
+          : this.eventZone &&
+              this.elapsed < this.eventUntil &&
+              dist(this.pos, this.eventZone) < 62
+            ? "Leave the pink fun zone! +5 BS each second."
+            : "";
+    this.hint.setVisible(false);
+    (
+      this.children.getByName("spawnLabel") as Phaser.GameObjects.Text
+    )?.setVisible(this.elapsed < 2.5);
     this.drawEffects();
     if (this.elapsed > this.hudAt) {
       this.updateHud();
@@ -634,7 +677,19 @@ export class OfficeScene extends Phaser.Scene {
       });
       return;
     }
-    if (i.type === "hide") {
+    if (i.type === "fun") {
+      if (this.used.has(i.id)) {
+        emit("toast", {
+          title: "ENGAGEMENT ALREADY MEASURED",
+          text: "HR says five claps per employee per floor. Budget constraints.",
+          duration: 3,
+        });
+        return;
+      }
+      this.used.add(i.id);
+      this.nonRequiredInteractions++;
+      emit("fun", { id: i.id });
+    } else if (i.type === "hide") {
       this.hidden = true;
       this.nonRequiredInteractions++;
       this.audio.sfx("ability");
@@ -716,6 +771,32 @@ export class OfficeScene extends Phaser.Scene {
         text: i.label + " · target occupied for 10 seconds.",
         duration: 3,
       });
+    }
+    this.updateHud();
+  }
+  resolveFun(id: string, outcome: FunFriday["result"], seconds: number) {
+    if (!this.used.has(id) || this.funCompleted.has(id)) return;
+    this.funCompleted.add(id);
+    this.elapsed += clamp(seconds, 0, 30);
+    this.bs = clamp(this.bs + outcome.bsChange, 0, 100);
+    this.coffee = Math.min(5, this.coffee + outcome.coffee);
+    this.funScore += outcome.score;
+    if (outcome.success) {
+      this.distractions++;
+      const station = this.level.interactions.find((i) => i.id === id)!;
+      this.enemies
+        .filter((e) => e.kind === "hr")
+        .forEach((e) => {
+          const standby =
+            [
+              { x: station.x + 70, y: station.y },
+              { x: station.x - 70, y: station.y },
+              { x: station.x, y: station.y - 70 },
+              { x: station.x, y: station.y + 70 },
+            ].find((p) => !blocked(p, 14, this.obstacles)) || station;
+          e.investigate(standby, outcome.distractSeconds, true);
+          e.say("That clap has leadership potential.", this.elapsed, 4);
+        });
     }
     this.updateHud();
   }
@@ -945,7 +1026,9 @@ export class OfficeScene extends Phaser.Scene {
               ? 0x9cf1c6
               : i.type === "coffee"
                 ? 0xf2c795
-                : 0x82cfee;
+                : i.type === "fun"
+                  ? 0xf5a9d0
+                  : 0x82cfee;
       m.lineStyle(
         used ? 1 : 2,
         color,
@@ -966,6 +1049,10 @@ export class OfficeScene extends Phaser.Scene {
           4,
           5,
         );
+      } else if (i.type === "fun") {
+        m.strokeRect(i.x - 8, i.y - 7, 5, 12)
+          .strokeRect(i.x + 3, i.y - 7, 5, 12)
+          .lineBetween(i.x - 1, i.y - 10, i.x + 1, i.y - 15);
       } else {
         m.strokeCircle(i.x, i.y - 3, 4).lineBetween(i.x, i.y + 3, i.x, i.y + 6);
       }
@@ -1085,6 +1172,16 @@ export class OfficeScene extends Phaser.Scene {
       suspicion: Math.max(0, ...this.enemies.map((e) => e.awareness)),
       daily: this.options.daily,
       seed: this.options.seed,
+      context: this.hintText,
+      dialogue:
+        this.enemies
+          .filter((e) => this.elapsed < e.quoteUntil && dist(e, this.pos) < 260)
+          .sort((a, b) => dist(a, this.pos) - dist(b, this.pos))
+          .map((e) => ({
+            speaker: ENEMIES[e.kind].name,
+            text: e.quote,
+            color: ENEMIES[e.kind].color,
+          }))[0] || null,
     });
   }
   finish(win: boolean, alt = false) {
@@ -1093,15 +1190,17 @@ export class OfficeScene extends Phaser.Scene {
     this.won = win;
     this.audio.sfx(win ? "exit" : "fail");
     if (win) this.audio.music("victory");
-    const score = scoreRun(
-      this.elapsed,
-      this.level.par,
-      this.spots,
-      this.hits,
-      this.collectibles,
-      this.distractions,
-      this.bs,
-    );
+    const score =
+      scoreRun(
+        this.elapsed,
+        this.level.par,
+        this.spots,
+        this.hits,
+        this.collectibles,
+        this.distractions,
+        this.bs,
+      ) +
+      this.funScore * 2;
     const result: Result = {
       level: this.level.id,
       time: Math.round(this.elapsed * 10) / 10,
@@ -1111,6 +1210,7 @@ export class OfficeScene extends Phaser.Scene {
       collectibles: this.collectibles,
       distractions: this.distractions,
       score,
+      funScore: this.funScore,
       medal: medal(score, this.spots, this.hits, this.elapsed, this.level.par),
       daily: this.options.daily,
       seed: this.options.seed,
@@ -1193,6 +1293,8 @@ export class OfficeScene extends Phaser.Scene {
       collected: [...this.collected],
       used: [...this.used],
       coffee: this.coffee,
+      funScore: this.funScore,
+      funCompleted: [...this.funCompleted],
       active: { ...this.active },
       cooldowns: { ...this.cooldowns },
       target: this.target?.id,
