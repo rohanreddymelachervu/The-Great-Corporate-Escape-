@@ -1767,3 +1767,72 @@ img.fun-host {
     opacity: 0.55;
   }
 }
+
+/* Ruleset 2: the current action and lift clock are always visible, not a fetch list. */
+.phase-hint {
+  display: block;
+  color: #bdcbd4;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.lift-progress {
+  height: 5px;
+  width: 100%;
+  margin-top: 7px;
+  background: #394554;
+  overflow: hidden;
+}
+.lift-progress span {
+  display: block;
+  height: 100%;
+  background: #f6cb83;
+  transition: width 0.12s linear;
+}
+.current-objective.boarding {
+  color: #b7ffda;
+}
+.dodge-ability {
+  border-color: #8ed7bd;
+  background: #203a3c;
+}
+.dodge-ability kbd {
+  font-size: 10px;
+}
+#touch-dash {
+  border-color: #ffadd1 !important;
+  color: #ffe0ef !important;
+  background: #4a3048 !important;
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .phase-hint {
+    font-size: 11px;
+  }
+  .touch-actions {
+    gap: 8px;
+  }
+  #touch-dash {
+    width: 54px;
+    height: 54px;
+  }
+  .touch-actions #touch-interact {
+    width: 58px;
+    height: 58px;
+  }
+}
+@media (max-height: 540px) and (min-width: 601px) {
+  .phase-hint {
+    font-size: 10px;
+  }
+  #touch-controls {
+    gap: 12px;
+  }
+  .touch-actions {
+    gap: 7px;
+  }
+  #touch-dash {
+    width: 52px;
+    height: 52px;
+  }
+}

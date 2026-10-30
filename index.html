@@ -54,7 +54,7 @@
       <main id="stage">
         <div
           id="game"
-          aria-label="Top-down office stealth game. Use WASD or arrow keys to move, E to interact, Shift to sprint, 1 to 6 for abilities."
+          aria-label="Top-down office stealth game. Use WASD or arrow keys to move, E to call the lift or use tools, Space to dodge, Shift to sprint, 1 to 6 for abilities."
           role="application"
           tabindex="0"
         ></div>
@@ -83,22 +83,26 @@
                 DAILY ESCAPE <span>↻</span>
               </button>
               <button id="fun-btn" class="fun-entry">
-                <span>HR FUN FRIDAY <b>♫</b></span>
-                <small>BONUS GAME · Clap on the beat. Keep HR happy.</small>
+                <span>DODGE HR · QUICK PLAY <b>↗</b></span>
+                <small
+                  >Call the lift. Escape HR, not another fetch quest.</small
+                >
               </button>
             </div>
             <p class="escape-route">
-              Badge <span>→</span> lift switch <span>→</span> exit
+              Call the lift <span>→</span> dodge the office <span>→</span> board
             </p>
             <div class="menu-links">
               <button id="floors-btn">CHOOSE FLOOR <span>01—05</span></button
               ><button id="achievements-btn">
-                ACHIEVEMENTS <span id="achievement-count">0/12</span></button
+                ACHIEVEMENTS <span id="achievement-count">0/13</span></button
+              ><button id="fun-practice-btn">CLAP PRACTICE</button
               ><button id="how-btn">HOW TO ESCAPE ↗</button>
             </div>
             <div class="controls-mini">
               <kbd>WASD</kbd> MOVE <i>·</i> <kbd>SHIFT</kbd> SPRINT <i>·</i>
-              <kbd>E</kbd> INTERACT<span class="mobile-note"
+              <kbd>SPACE</kbd> DODGE <i>·</i> <kbd>E</kbd> CALL / USE<span
+                class="mobile-note"
                 >TOUCH CONTROLS AVAILABLE · LANDSCAPE RECOMMENDED</span
               >
             </div>
@@ -108,7 +112,7 @@
             ><span>YOUR OFFICE.<br /><b>YOUR FINAL BOSS.</b></span>
           </div>
           <div class="menu-stamp">
-            <span class="status-dot"></span> NO OVERTIME. JUST ONE MORE TRY.
+            <span class="status-dot"></span> RULESET 2 · CALL. DODGE. ESCAPE.
           </div>
         </div>
         <aside id="hud" hidden aria-label="Escape objectives and status">
@@ -161,7 +165,8 @@
             <div id="ability-bar" aria-label="Available abilities"></div>
             <div id="desktop-hint" class="desktop-hint">
               <span>WASD / ↑↓←→</span> MOVE <span>SHIFT</span> SPRINT
-              <span>E</span> INTERACT <span>ESC</span> PAUSE
+              <span>SPACE</span> DODGE <span>E</span> CALL / USE
+              <span>ESC</span> PAUSE
             </div>
           </div>
           <div id="touch-controls">
@@ -171,6 +176,7 @@
             </div>
             <div class="touch-actions">
               <button id="touch-sprint" aria-label="Hold to sprint">RUN</button>
+              <button id="touch-dash" aria-label="Dodge">DASH</button>
               <button id="touch-interact" aria-label="Interact">
                 E<br /><small>ACT</small>
               </button>

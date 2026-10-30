@@ -145,7 +145,7 @@ function modal(kind: string, html: string, small = false) {
       $("#modal-root").querySelector<HTMLElement>("button,input")?.focus(),
     );
 }
-function start(level: number, daily = false) {
+function start(level: number, daily = false, seedOverride?: string) {
   stopFun();
   audio.resume();
   audio.unlock();
@@ -163,7 +163,7 @@ function start(level: number, daily = false) {
   $("#toast").hidden = true;
   document.body.classList.add("playing");
   buildAbilities(level);
-  const seed = daily ? dailySeed() : `${Date.now()}-${level}`;
+  const seed = seedOverride ?? (daily ? dailySeed() : `${Date.now()}-${level}`);
   scene.scene.restart({ level, daily, seed, preview: false });
   game.scale.refresh();
   requestAnimationFrame(() => {
@@ -206,15 +206,18 @@ function goHome() {
   syncMenu();
 }
 function buildAbilities(level: number) {
-  $("#ability-bar").innerHTML = (
-    Object.entries(ABILITIES) as [Ability, (typeof ABILITIES)[Ability]][]
-  )
-    .filter(([, d]) => level >= d.level)
-    .map(
-      ([id, d]) =>
-        `<button class="ability ${level < d.level ? "locked" : ""}" data-ability="${id}" ${level < d.level ? "disabled" : ""} title="${d.description}" aria-label="${d.name}"><kbd>${d.key}</kbd><span>${d.short}<small id="ability-${id}">${level < d.level ? "FLOOR " + d.level : "READY"}</small></span></button>`,
-    )
-    .join("");
+  $("#ability-bar").innerHTML =
+    `<button class="ability dodge-ability" id="dodge-ability" title="Short directional dodge. Avoid HR charges and corporate hazards. Costs 18 stamina. Does not pass through furniture."><kbd>SPACE</kbd><span>DODGE<small id="dash-status">READY</small></span></button>` +
+    (Object.entries(ABILITIES) as [Ability, (typeof ABILITIES)[Ability]][])
+      .filter(([, d]) => level >= d.level)
+      .map(
+        ([id, d]) =>
+          `<button class="ability ${level < d.level ? "locked" : ""}" data-ability="${id}" ${level < d.level ? "disabled" : ""} title="${d.description}" aria-label="${d.name}"><kbd>${d.key}</kbd><span>${d.short}<small id="ability-${id}">${level < d.level ? "FLOOR " + d.level : "READY"}</small></span></button>`,
+      )
+      .join("");
+  $("#dodge-ability").onclick = () => {
+    if (!paused) scene.dash();
+  };
   document.querySelectorAll<HTMLButtonElement>("[data-ability]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -230,23 +233,50 @@ window.addEventListener("office:hud", ((e: CustomEvent) => {
     "FLOOR " + String(h.level).padStart(2, "0") + " / 05";
   $("#floor-name").textContent = h.name;
   $("#timer").textContent = formatTime(h.elapsed);
-  $("#run-mode").textContent = h.daily ? "DAILY · " + h.seed : "FRIDAY ESCAPE";
+  $("#run-mode").textContent = h.daily
+    ? "DAILY · " + h.seed
+    : "OFFICE HUNT · V2";
   $("#bs-value").textContent = Math.floor(h.bs) + "%";
   $("#bs-bar").style.width = h.bs + "%";
   $("#bs-bar").style.background = h.bs > 70 ? "#ff667f" : "#ff937f";
   $("#stamina-bar").style.width = h.stamina + "%";
-  const nextObjective = h.objectives.find((o: { done: boolean }) => !o.done);
-  const completedObjectives = h.objectives.filter(
-    (o: { done: boolean }) => o.done,
-  ).length;
-  $("#objectives").innerHTML = nextObjective
-    ? `<div class="current-objective"><span class="objective-check">${completedObjectives + 1}.</span>${nextObjective.label}</div>`
-    : '<div class="current-objective" style="color:#a9f4ce">3. REACH THE ELEVATOR ↗</div>';
-  $("#detection").hidden = h.suspicion < 0.25 || h.hidden;
-  $("#detection").textContent =
-    h.suspicion > 0.9
-      ? "MEETING INCOMING. BREAK LINE OF SIGHT."
-      : "YOU’RE BEING PERCEIVED. MOVE.";
+  $("#stamina-bar").style.background = h.stamina < 18 ? "#ffb28f" : "#a9f4ce";
+  const phase = h.phase || "find-lift";
+  $("#objectives").innerHTML = h.wfhActive
+    ? '<div class="current-objective boarding">WFH APPROVED · PURPLE EXIT</div><small class="phase-hint">The gold arrow has rerouted. Go!</small>'
+    : phase === "find-lift"
+      ? '<div class="current-objective">1. CALL THE LIFT</div><small class="phase-hint">Gold arrow → doors. Press E.</small>'
+      : phase === "waiting"
+        ? `<div class="current-objective">2. LIFT IN ${Math.ceil(h.eta)}s</div><small class="phase-hint">Keep moving. SPACE dodges.</small><div class="lift-progress"><span style="width:${Math.max(0, 100 - (h.eta / (20 + (h.level - 1) * 5)) * 100)}%"></span></div>`
+        : `<div class="current-objective boarding">3. BOARD NOW · ${Math.ceil(h.doors)}s</div><small class="phase-hint">Doors are open. Gold arrow!</small>`;
+  const special = h.hrWindup;
+  const incoming = h.incoming;
+  const danger = !!special || !!incoming || h.suspicion > 0.25;
+  $("#detection").hidden = !danger || h.hidden;
+  const cues: Record<string, string> = {
+    photo: "HR PHOTO: SPACE through the pink sweep.",
+    meeting: "MEETING INVITE: leave the orange circle.",
+    yap: "INFINITE YAP: leave the purple zone.",
+    paper: "FRIDAY DEPLOY: dodge the paper.",
+    allhands: "ALL HANDS: get out of the gold circle.",
+  };
+  $("#detection").textContent = special
+    ? "HR PHOTO CHARGE! SPACE sideways now."
+    : incoming
+      ? cues[incoming]
+      : h.suspicion > 0.9
+        ? "YOU WERE SPOTTED. Break sight, then change route."
+        : "They are noticing you. Find cover or get moving.";
+  $("#dash-status").textContent =
+    h.dashCooldown > 0
+      ? h.dashCooldown.toFixed(1) + "s"
+      : h.stamina < 18
+        ? "NEED STAMINA"
+        : "READY";
+  $("#dodge-ability").classList.toggle(
+    "cooling",
+    h.dashCooldown > 0 || h.stamina < 18,
+  );
   $("#dialogue-box").hidden = !h.dialogue || !!h.context;
   if (h.dialogue) {
     $("#dialogue-speaker").textContent = h.dialogue.speaker;
@@ -261,16 +291,20 @@ window.addEventListener("office:hud", ((e: CustomEvent) => {
       : h.active.slack
         ? "BUSY ON SLACK. DON’T MOVE."
         : h.active.call
-          ? "ON A VERY REAL CLIENT CALL."
+          ? "FAKE CLIENT CALL · slower movement; HR and managers defer."
           : h.active.calendar
             ? "CALENDAR: MEETINGS DECLINED."
             : h.active.vpn
               ? "VPN DOWN. CORPORATE ACTIVITY PAUSED."
               : h.target
                 ? "E · " + h.target.toUpperCase()
-                : h.ready
-                  ? "EXIT IS OPEN. YOUR WEEKEND IS THIS WAY."
-                  : "Follow the gold arrow. Badge → lift switch → exit.");
+                : h.wfhActive
+                  ? "PURPLE EXIT OPEN. Follow the rerouted gold arrow."
+                  : h.ready
+                    ? "EXIT IS OPEN. YOUR WEEKEND IS THIS WAY."
+                    : phase === "waiting"
+                      ? `SPACE dodges · ${h.dodges} close calls · tools can buy time.`
+                      : "Gold arrow → lift. E calls it. SPACE dodges HR.");
   for (const [id, d] of Object.entries(ABILITIES) as [
     Ability,
     (typeof ABILITIES)[Ability],
@@ -322,7 +356,7 @@ function showResult(
     : VICTORY_LINES[hash(result.seed) % VICTORY_LINES.length];
   modal(
     "result",
-    `<div class="result-hero"><div class="modal-eyebrow">${result.daily ? "DAILY ESCAPE · " + result.seed : win ? "FRIDAY. FINALLY." : "MEETING ACCEPTED. INVOLUNTARILY."}</div><div class="result-icon ${win ? "" : "fail"}">${win ? "↗" : "∞"}</div><h2>${win ? (final ? "YOU HAVE A LIFE." : "OUT OF OFFICE.") : "PROMOTED TO<br>STAYING LATE."}</h2><p>${win ? line : "Congratulations! You’re now Senior Vice President of Staying Late. Your compensation: exposure to another all-hands."}</p>${win ? `<div class="medal">${result.medal.toUpperCase()}</div><div class="score-large">${result.score.toLocaleString()}<small style="font-size:10px;letter-spacing:1px;margin-left:8px">PTS</small></div>` : '<div class="medal">YOUR WEEKEND DESERVES A RETRY.</div>'}${result.funScore ? `<p class="result-achievements">HR FUN BONUS · +${result.funScore * 2} POINTS</p>` : ""}<div class="result-stats"><div><b>${formatTime(result.time)}</b><small>TIME</small></div><div><b>${result.spots}</b><small>SPOTTED</small></div><div><b>${result.bs}%</b><small>FINAL BS</small></div><div><b>${result.collectibles}</b><small>LAPTOPS</small></div></div>${newly.length ? `<div class="result-achievements">${newly.map((id) => "UNLOCKED · " + ACHIEVEMENTS.find((a) => a.id === id)?.name).join("<br>")}</div>` : ""}${alt ? "<p>Purple exit approved. Remote work is a state of escape.</p>" : ""}<div class="modal-actions" style="justify-content:center"><button id="result-primary" class="primary">${!win ? "RETRY INSTANTLY ↻" : result.daily || result.level === 5 ? "PLAY AGAIN ↻" : "NEXT FLOOR ↗"}</button><button id="result-retry" class="secondary">${win ? "REPLAY FLOOR" : "MAIN MENU"}</button>${win ? '<button id="share-btn" class="secondary">SHARE RESULT ↗</button>' : '<button id="result-tip" class="secondary">SURVIVAL TIPS</button>'}<button id="result-home" class="secondary">${win ? "MAIN MENU" : "CHOOSE FLOOR"}</button></div><div class="share-status" id="share-status"></div></div>`,
+    `<div class="result-hero"><div class="modal-eyebrow">${result.daily ? "DAILY ESCAPE · " + result.seed : win ? "FRIDAY. FINALLY." : "MEETING ACCEPTED. INVOLUNTARILY."}</div><div class="result-icon ${win ? "" : "fail"}">${win ? "↗" : "∞"}</div><h2>${win ? (final ? "YOU HAVE A LIFE." : "OUT OF OFFICE.") : "PROMOTED TO<br>STAYING LATE."}</h2><p>${win ? line : "Congratulations! You’re now Senior Vice President of Staying Late. Your compensation: exposure to another all-hands."}</p>${win ? `<div class="medal">${result.medal.toUpperCase()}</div><div class="score-large">${result.score.toLocaleString()}<small style="font-size:10px;letter-spacing:1px;margin-left:8px">PTS</small></div>` : '<div class="medal">YOUR WEEKEND DESERVES A RETRY.</div>'}${result.dodges ? `<p class="result-achievements">${result.dodges} CLUTCH DODGES · +${result.dodges * 125} POINTS</p>` : ""}${result.funScore ? `<p class="result-achievements">HR FUN BONUS · +${result.funScore * 2} POINTS</p>` : ""}<div class="result-stats"><div><b>${formatTime(result.time)}</b><small>TIME</small></div><div><b>${result.spots}</b><small>SPOTTED</small></div><div><b>${result.bs}%</b><small>FINAL BS</small></div><div><b>${result.collectibles}</b><small>LAPTOPS</small></div></div>${newly.length ? `<div class="result-achievements">${newly.map((id) => "UNLOCKED · " + ACHIEVEMENTS.find((a) => a.id === id)?.name).join("<br>")}</div>` : ""}${alt ? "<p>Purple exit approved. Remote work is a state of escape.</p>" : ""}<div class="modal-actions" style="justify-content:center"><button id="result-primary" class="primary">${!win ? "RETRY INSTANTLY ↻" : result.daily || result.level === 5 ? "PLAY AGAIN ↻" : "NEXT FLOOR ↗"}</button><button id="result-retry" class="secondary">${win ? "REPLAY FLOOR" : "MAIN MENU"}</button>${win ? '<button id="share-btn" class="secondary">SHARE RESULT ↗</button>' : '<button id="result-tip" class="secondary">SURVIVAL TIPS</button>'}<button id="result-home" class="secondary">${win ? "MAIN MENU" : "CHOOSE FLOOR"}</button></div><div class="share-status" id="share-status"></div></div>`,
     false,
   );
   $("#result-primary").onclick = () =>
@@ -331,6 +365,7 @@ function showResult(
         ? result.level + 1
         : result.level,
       result.daily,
+      !win ? result.seed : undefined,
     );
   $("#result-retry").onclick = () =>
     win ? start(result.level, result.daily) : goHome();
@@ -341,7 +376,7 @@ function showResult(
 function share() {
   if (!lastResult) return;
   const r = lastResult;
-  const text = `I escaped ${LEVELS[r.level - 1].name} in ${formatTime(r.time)}. ${r.medal} · ${r.score.toLocaleString()} pts · ${r.spots} sightings. ${r.daily ? "Daily " + r.seed + " · " : ""}THE GREAT OFFICE ESCAPE: 4:59 PM. Your manager is typing…`;
+  const text = `I escaped the ruleset 2 office hunt on ${LEVELS[r.level - 1].name} in ${formatTime(r.time)}. ${r.medal} · ${r.score.toLocaleString()} pts · ${r.spots} sightings. ${r.daily ? "Daily " + r.seed + " · " : ""}THE GREAT OFFICE ESCAPE: 4:59 PM. Your manager is typing…`;
   if (navigator.share)
     navigator
       .share({ title: "The Great Office Escape: 4:59 PM", text })
@@ -366,7 +401,7 @@ function share() {
 function floorSelect() {
   modal(
     "floors",
-    `<div class="modal-eyebrow">FIVE FLOORS BETWEEN YOU AND A LIFE</div><h2>CHOOSE YOUR<br>WORKPLACE HAZARD.</h2><p>Escape each floor to unlock the next. Daily mode lets everyone attempt the same floor and seed.</p><div class="floor-grid">${LEVELS.map((l) => `<button class="floor-card" data-floor="${l.id}" ${l.id > save.unlocked ? "disabled" : ""}><span>0${l.id}</span><div><strong>${l.name}</strong><small>${l.subtitle}</small></div><em>${l.id > save.unlocked ? "LOCKED" : save.bests[l.id]?.medal || "UNESCAPED"}${save.bests[l.id] ? "<br>" + save.bests[l.id].score.toLocaleString() + " pts" : ""}</em></button>`).join("")}</div>`,
+    `<div class="modal-eyebrow">FIVE FLOORS BETWEEN YOU AND A LIFE</div><h2>CHOOSE YOUR<br>WORKPLACE HAZARD.</h2><p>Escape each floor to unlock the next. Daily mode lets everyone attempt the same floor and seed.</p><div class="floor-grid">${LEVELS.map((l) => `<button class="floor-card" data-floor="${l.id}" ${l.id > save.unlocked ? "disabled" : ""}><span>0${l.id}</span><div><strong>${l.name}</strong><small>${l.subtitle}</small></div><em>${l.id > save.unlocked ? "LOCKED" : save.bests[`v2-${l.id}`]?.medal || "UNESCAPED"}${save.bests[`v2-${l.id}`] ? "<br>" + save.bests[`v2-${l.id}`].score.toLocaleString() + " pts" : ""}</em></button>`).join("")}</div>`,
   );
   document
     .querySelectorAll<HTMLButtonElement>("[data-floor]")
@@ -412,12 +447,12 @@ function applySettings() {
 function how(afterFail = false) {
   modal(
     "how",
-    `<div class="modal-eyebrow">OBJECTIVE: LEAVE. DO NOT EXPLAIN.</div><h2>THE SURVIVAL GUIDE.</h2><div class="guide-grid"><div class="guide-block"><strong>01 · GET OUT</strong><p>Follow the gold arrow. Collect your badge, use E at the mint switch, then enter the elevator. Purple WFH exits need a rare house token + ability 6. Each floor is a short, replayable escape.</p></div><div class="guide-block"><strong>02 · DON’T GET PERCEIVED</strong><p>Colored cones show vision. Walls and furniture block sight. A filling ring gives you a grace period. Break sight to lose pursuit. Sprinting is loud. Interns are fast, not omniscient.</p></div><div class="guide-block"><strong>03 · BS IS NOT HEALTHCARE</strong><p>Getting caught adds Corporate BS. At 100%, you stay late. E at purple hide rings to disappear and decompress. Coffee pickups and pantry stations reduce BS. Three seconds of grace after a catch.</p></div><div class="guide-block"><strong>04 · USE YOUR TOOLS</strong><p>1 throws coffee ahead. 2 fakes a call. 3 pretends to work (stay still). 4 blocks meetings. 5 disconnects VPN. 6 approves WFH. Abilities unlock by floor. Mouse over a button for details.</p></div><div class="guide-block"><strong>05 · HACK HR’S FUN FRIDAY</strong><p>Find the pink HR Fun Activity booth on floors 2, 4 and 5. Press E and clap in the mint timing zone. Three of five hits reduce BS by 25, refill one coffee and distract HR for 12 seconds. Practice from the main menu.</p></div></div><p><kbd>WASD</kbd> / arrows: move · <kbd>SHIFT</kbd> sprint · <kbd>E</kbd> / Space interact · <kbd>1–6</kbd> abilities · <kbd>ESC</kbd> pause · <kbd>M</kbd> mute. Touch: drag joystick, hold RUN, tap ACT. Landscape gives a wider view.</p><details><summary style="font-size:10px;color:#a9f4ce;cursor:pointer">KNOW YOUR CORPORATE THREATS ↓</summary>${Object.values(
+    `<div class="modal-eyebrow">OBJECTIVE: LEAVE. DO NOT EXPLAIN.</div><h2>THE SURVIVAL GUIDE.</h2><div class="guide-grid"><div class="guide-block"><strong>01 · GET OUT</strong><p>Follow the gold arrow. Your own badge is already in your pocket. Press E at the gold elevator doors to call the lift. Dodge the office while it arrives, then board before the 10-second door window ends. Side switches are optional sabotage, not compulsory errands. Purple WFH exits bypass the lift with a house token + 6.</p></div><div class="guide-block"><strong>02 · DON’T GET PERCEIVED</strong><p>Colored cones show vision. Walls and furniture block sight. A filling ring gives you a grace period. Break sight to lose pursuit. Sprinting is loud. Interns are fast, not omniscient.</p></div><div class="guide-block"><strong>03 · BS IS NOT HEALTHCARE</strong><p>Getting caught adds Corporate BS. At 100%, you stay late. Purple hide spots offer six seconds of cover, then need a cooldown. Coffee and pantry breaks reduce BS. After a catch, three seconds of grace let you get moving again.</p></div><div class="guide-block"><strong>04 · USE YOUR TOOLS</strong><p>SPACE is a short dodge, not an interaction. It avoids HR lunges and moving hazard sweeps, but cannot cross furniture. Coffee only lures two colleagues and will not fool a pursuer who can still see you. Calls, camouflage, calendar, VPN and WFH remain useful but brief. Abilities unlock by floor. Mouse over a button for details.</p></div><div class="guide-block"><strong>05 · HACK HR’S FUN FRIDAY</strong><p>Find the pink HR Fun Activity booth on floors 2, 4 and 5. Press E and clap in the mint timing zone. Three of five hits reduce BS by 25, refill one coffee and distract HR for 12 seconds. Practice from CLAP PRACTICE in the main menu.</p></div></div><p><kbd>WASD</kbd> / arrows: move · <kbd>SHIFT</kbd> sprint · <kbd>SPACE</kbd> dodge · <kbd>E</kbd> call / use · <kbd>1–6</kbd> abilities · <kbd>ESC</kbd> pause · <kbd>M</kbd> mute. Touch: drag joystick, hold RUN, tap DASH to evade, ACT to call / use. Landscape gives a wider view.</p><details><summary style="font-size:10px;color:#a9f4ce;cursor:pointer">KNOW YOUR CORPORATE THREATS ↓</summary>${Object.values(
       ENEMIES,
     )
       .map(
         (d) =>
-          `<div class="threat-row" style="border-color:#${d.color.toString(16)}"><b>${d.name} · ${d.title}</b><p>+${d.damage} BS. Weakness: ${d.weakness}. ${d.name === "The Yappaccino Intern" ? "Fast erratic patrols. Nearby yap slows you; hear 12 seconds for Yappologist." : d.name === "Office Gossip" ? "Broadcasts your location to nearby enemies." : d.name === "The Founder" ? "Long sightlines. All Hands expands awareness. Ignores fake calls." : d.name === "HR" ? "Forced-fun rings build BS; avoid the pink zone." : d.name === "Product Manager" ? "Scope events briefly lock the elevator. VPN cancels the blocker." : "Patrols desks and checks Slack. Fake calls are effective."}</p></div>`,
+          `<div class="threat-row" style="border-color:#${d.color.toString(16)}"><b>${d.name} · ${d.title}</b><p>+${d.damage} BS. Weakness: ${d.weakness}. ${d.name === "The Yappaccino Intern" ? "Fast erratic patrols. Nearby yap slows you; hear 12 seconds for Yappologist." : d.name === "Office Gossip" ? "Broadcasts your location to nearby enemies." : d.name === "The Founder" ? "Long sightlines. All Hands expands awareness. Ignores fake calls." : d.name === "HR" ? "Lines up a photo, visibly locks her aim, then lunges. Dodge sideways! Pink photo sweeps cross the office during lift waits." : d.name === "Product Manager" ? "Meeting zones make you move. Getting caught adds a one-time three-second lift delay; sabotage the roadmap or use VPN." : "Investigates badge pings after the lift is called. A caught quick sync adds a one-time four-second lift delay. Fake calls or cover help."}</p></div>`,
       )
       .join(
         "",
@@ -436,7 +471,8 @@ function pauseMenu() {
     true,
   );
   $("#resume-btn").onclick = closeModal;
-  $("#restart-btn").onclick = () => start(scene.level.id, scene.options.daily);
+  $("#restart-btn").onclick = () =>
+    start(scene.level.id, scene.options.daily, scene.options.seed);
   $("#pause-help").onclick = () => how();
   $("#pause-home").onclick = home;
 }
@@ -485,14 +521,15 @@ function launchFun(practice: boolean, id?: string) {
 window.addEventListener("office:fun", ((e: CustomEvent) => {
   if (playing && !paused) launchFun(false, e.detail.id);
 }) as EventListener);
-$("#fun-btn").onclick = () => launchFun(true);
+$("#fun-btn").onclick = () => start(2);
+$("#fun-practice-btn").onclick = () => launchFun(true);
 $("#play-btn").onclick = () => start(save.unlocked);
 $("#daily-btn").onclick = () => {
   const seed = dailySeed(),
     l = (hash(seed) % 5) + 1;
   modal(
     "daily",
-    `<div class="modal-eyebrow">SAME SEED. SAME CHAOS. EVERYONE.</div><h2>THE DAILY<br>STAND-DOWN.</h2><p>${seed} UTC · Floor ${l}: ${LEVELS[l - 1].name}</p><p>Identical starting resources and seeded patrols. No campaign unlocks needed. Share your score to compare with colleagues. Best today: <strong style="color:#a9f4ce">${save.dailyBests[seed]?.toLocaleString() || "UNESCAPED"}</strong>.</p><p style="font-size:9px">Scores are local and honor-system; no online leaderboard. Different choices naturally change the simulation.</p><div class="modal-actions"><button id="daily-start" class="primary">ATTEMPT TODAY’S ESCAPE ↗</button></div>`,
+    `<div class="modal-eyebrow">SAME SEED. SAME CHAOS. EVERYONE.</div><h2>THE DAILY<br>STAND-DOWN.</h2><p>${seed} UTC · Floor ${l}: ${LEVELS[l - 1].name}</p><p>Identical starting resources and seeded patrols. No campaign unlocks needed. Share your score to compare with colleagues. Best today: <strong style="color:#a9f4ce">${save.dailyBests[`v2:${seed}`]?.toLocaleString() || "UNESCAPED"}</strong>.</p><p style="font-size:9px">Scores are local and honor-system; no online leaderboard. Different choices naturally change the simulation.</p><div class="modal-actions"><button id="daily-start" class="primary">ATTEMPT TODAY’S ESCAPE ↗</button></div>`,
     true,
   );
   $("#daily-start").onclick = () => start(l, true);
@@ -525,15 +562,19 @@ document.addEventListener("keydown", (e) => {
     if (modalKind && modalKind !== "result") closeModal();
     else if (playing && !scene.ended) pauseMenu();
   }
-  if (
-    playing &&
-    ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(
-      e.code,
-    )
-  )
+  // Phaser ignores events already prevented by a document listener. Handle the
+  // dodge here before preventing browser Space behavior; leave movement keys
+  // to Phaser's own capture system so arrows work as well as WASD.
+  if (e.code === "Space" && playing && !paused && !scene.ended) {
     e.preventDefault();
+    if (!e.repeat) scene.dash();
+  }
   if (e.code === "KeyR" && modalKind === "result" && lastResult)
-    start(lastResult.level, lastResult.daily);
+    start(
+      lastResult.level,
+      lastResult.daily,
+      scene.won ? undefined : lastResult.seed,
+    );
   if (e.key === "Tab" && modalKind) {
     const nodes = Array.from(
       $("#modal-root").querySelectorAll<HTMLElement>(
@@ -558,6 +599,10 @@ window.addEventListener("blur", () => {
   scene.touch = { x: 0, y: 0, sprint: false };
   if (playing && !scene.ended && !paused) pauseMenu();
 });
+$("#touch-dash").onpointerdown = (e) => {
+  e.preventDefault();
+  if (!paused) scene.dash();
+};
 const joy = $("#joystick"),
   stick = $("#stick");
 let joyPointer = -1;
@@ -626,7 +671,7 @@ const inspection: {
 } = { snapshot: () => scene.snapshot(), ready: () => !!scene.player };
 if (import.meta.env.DEV && new URLSearchParams(location.search).has("qa"))
   inspection.qa = {
-    start: (level: number) => start(level),
+    start: (level: number, seed?: string) => start(level, false, seed),
     position: (x: number, y: number) => {
       scene.pos = { x, y };
     },

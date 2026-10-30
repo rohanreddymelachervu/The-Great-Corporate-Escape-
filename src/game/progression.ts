@@ -34,10 +34,11 @@ export function persist(s: SaveData): void {
 export function record(s: SaveData, r: Result, earned: string[]): string[] {
   if (!r.daily) {
     s.unlocked = Math.min(5, Math.max(s.unlocked, r.level + 1));
-    const key = String(r.level);
+    const key = r.ruleset === 2 ? `v2-${r.level}` : String(r.level);
     if (!s.bests[key] || s.bests[key].score < r.score) s.bests[key] = r;
   } else {
-    s.dailyBests[r.seed] = Math.max(s.dailyBests[r.seed] || 0, r.score);
+    const dailyKey = r.ruleset === 2 ? `v2:${r.seed}` : r.seed;
+    s.dailyBests[dailyKey] = Math.max(s.dailyBests[dailyKey] || 0, r.score);
     const days = Object.keys(s.dailyBests).sort();
     for (const k of days.slice(0, -31)) delete s.dailyBests[k];
   }

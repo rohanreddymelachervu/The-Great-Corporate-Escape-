@@ -77,6 +77,8 @@ export interface Result {
   score: number;
   medal: string;
   funScore?: number;
+  dodges?: number;
+  ruleset?: number;
   daily: boolean;
   seed: string;
 }

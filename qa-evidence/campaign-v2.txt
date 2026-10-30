@@ -1,0 +1,60 @@
+ESCAPED {
+  level: 1,
+  attempt: 1,
+  win: true,
+  time: 29.71666666666626,
+  bs: 12,
+  spots: 0,
+  hits: 1,
+  dodges: 1,
+  route: 'lift',
+  realInputsOnly: true
+}
+ESCAPED {
+  level: 2,
+  attempt: 1,
+  win: true,
+  time: 33.61666666666604,
+  bs: 24,
+  spots: 2,
+  hits: 2,
+  dodges: 0,
+  route: 'lift',
+  realInputsOnly: true
+}
+ESCAPED {
+  level: 3,
+  attempt: 1,
+  win: true,
+  time: 40.74999999999897,
+  bs: 42,
+  spots: 2,
+  hits: 3,
+  dodges: 1,
+  route: 'lift',
+  realInputsOnly: true
+}
+ESCAPED {
+  level: 4,
+  attempt: 1,
+  win: true,
+  time: 41.79999999999891,
+  bs: 0,
+  spots: 3,
+  hits: 0,
+  dodges: 0,
+  route: 'lift',
+  realInputsOnly: true
+}
+ESCAPED {
+  level: 5,
+  attempt: 1,
+  win: true,
+  time: 45.716666666665354,
+  bs: 65,
+  spots: 6,
+  hits: 4,
+  dodges: 1,
+  route: 'lift',
+  realInputsOnly: true
+}

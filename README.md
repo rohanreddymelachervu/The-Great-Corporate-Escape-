@@ -1,220 +1,151 @@
-# THE GREAT OFFICE ESCAPE: 4:59 PM
+# THE GREAT OFFICE ESCAPE: 4:59 PM — Ruleset 2
 
 > You've finished your work. Unfortunately, nobody else has.
 
-An original, entirely client-side pixel-art stealth game about escaping a Bangalore startup on Friday. Built with **Phaser 3, TypeScript and Vite**. No backend, accounts, runtime AI, API keys, database, analytics or paid gameplay services.
+A client-side Phaser 3 + TypeScript + Vite office-escape game. No backend, account, database, runtime AI, API key, tracker or paid gameplay service.
 
-## Play
+**Preview:** https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
 
-**Public game:** https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
+**Deployable GitHub Pages build:** `docs/index.html` on `main`. The source and rebuilt `docs` are committed to the existing `rohanreddymelachervu/The-Great-Corporate-Escape-` repository. This update does not change hosting settings; redeploy your existing Pages setup from that folder.
 
-This is the verified Hyperagent preview of version 1.1. The GitHub Pages production file is also committed at docs/index.html. Pages publication is waiting for the repository owner to enable main /docs in repository settings; it is not yet claimed live.
+## This is a different gameplay loop
 
-The release includes five campaign floors, a seeded daily challenge, six enemy personalities, six functional abilities, original procedural pixel art and audio, local records, medals and 12 achievements. Start with **CLOCK OUT**. Collect your badge, activate the highlighted switch with **E**, and enter the elevator. The gold arrow indicates your next objective.
+The old compulsory badge-and-switch errands are gone. You already have your own ID.
 
-A production build and self-contained HTML release can be generated using the commands below. The self-contained file also works offline, including its fonts, game engine, artwork and soundtrack.
+1. **Follow the gold arrow to the lift. Press E to call it.**
+2. **Survive the office while it arrives.** HR attempts photo charges, moving photo sweeps cross your lane, and meetings, intern yap, paperwork and all-hands announcements create marked danger zones. Badge pings draw colleagues toward a snapshot of your last position.
+3. **Board before the doors close.** The lift opens for ten seconds. Miss it and another arrives in fourteen seconds; missing one is not an arbitrary instant loss.
 
-## Version 1.1 — clear layout and actual HR fun
+The first floor already has both the manager and HR. **DODGE HR · QUICK PLAY** jumps directly into the HR floor. The optional rhythm activity remains at office booths and under **CLAP PRACTICE**; it is not a substitute for the escape game.
 
-- The map, objective/status rail, notifications, dialogue and controls now occupy separate layout regions. No HUD cards float over gameplay. Only the next objective, unlocked abilities and one nearby speaker are shown.
-- Portrait and landscape touch layouts have separate controls and a following camera. A ResizeObserver keeps the canvas matched to its own viewport.
-- **HR Fun Friday: Clap for the Culture** is a real five-beat timing game. Play the bonus from the main menu, or use E at pink HR booths on floors 2, 4 and 5.
-- Three good claps grant −25 BS, one coffee, a 12-second HR distraction, and an accuracy-based score bonus. Failure adds 8 BS. Booths are single-use per floor. The office pauses, but activity time counts toward the run. Practice has its own local high score and does not modify campaign progress.
+Lift waits are 20 / 26 / 30 / 34 / 38 seconds across the five floors. Side switches are optional tactics: sabotage the main nuisance, cancel matching interference and bring the lift up to seven seconds sooner. WFH tokens on later floors enable a real alternative exit.
 
-## Development
+## The interference has counterplay
 
-Node **22+** and npm are recommended. No environment variables or secrets are needed.
+- **HR photo charge:** HR stops, draws a pink locked-aim line, then lunges at that recorded position. Dodge sideways. She cannot home during the charge or go through furniture.
+- **Pink photo sweep:** a warning lane precedes the moving beam. Step out of its lane or time a dodge through it.
+- **Orange meeting zone:** move away before the calendar circle arms.
+- **Purple yap:** leave the marked ring. The intern also moves quickly and slows nearby employees with his monologue.
+- **Friday paperwork:** stacks cross a telegraphed path. Move aside, use cover or dodge.
+- **Founder All Hands:** get out of the gold circle. The whistle redirects the office and expands awareness temporarily. The founder ignores fake calls.
+- **Manager / PM:** catching you during a lift wait can add a one-time four / three second delay respectively. They cannot delay it forever.
+- **Gossip:** discovery broadcasts your last known position to nearby colleagues.
+
+All hazards have a warning before activation. Walls and solid furniture block line of sight and hazard contact. A hazard can damage you once, not every frame. Dodging does not permit walking through desks. Remaining inside an armed circle after a dash can still hurt.
+
+Getting caught builds **Corporate BS**. At 100%, you are promoted to staying late. Physical catches grant a three-second escape grace period. Coffee pickups, pantry breaks and brief hiding provide recovery.
+
+## Controls
+
+| Action | Keyboard | Touch |
+|---|---|---|
+| Move | WASD / arrows | Joystick |
+| Sprint | Hold Shift | Hold RUN |
+| Dodge | Space | DASH |
+| Call lift / use a nearby tool / hide | E | ACT |
+| Throw coffee ahead | 1 | COFFEE |
+| Fake client call | 2 | CLIENT CALL |
+| Stationary Slack camouflage | 3 | BUSY |
+| Calendar blocker | 4 | CALENDAR |
+| VPN disconnect | 5 | VPN |
+| Emergency WFH approval | 6 | WFH |
+| Pause | Escape / pause button | Pause button |
+| Mute | M / sound button | Sound button |
+
+**Space is a dodge, not an interaction.** It costs 18 stamina, lasts 0.19 seconds and has a 1.7-second cooldown. Walk or refill coffee to recover stamina. Sprint exhaustion uses a recovery latch rather than jittering between speeds.
+
+Coffee now diverts **at most two nearby colleagues**, and a close pursuer who still sees you only hesitates. Break sight and throw around cover. It is not a group invisibility button.
+
+Fake calls last five seconds and slow your movement; founder and intern ignore them. Calendar immunity lasts 3.5 seconds. VPN clears live hazards and stops enemies for two seconds while the lift continues coming. Camouflage requires remaining stationary. Tools unlock progressively by floor.
+
+Purple hide spots offer **six seconds of cover**, then expire and need a cooldown. You cannot hide through an entire lift wait. Hiding, pantry coffee and optional sabotage are useful choices rather than mandatory fetch steps.
+
+The HUD, map and controls occupy separate grid regions. Only the current objective and one nearby NPC speaker are shown. Portrait and landscape touch layouts retain the same rules. Audio starts after a gesture and provides separate music/SFX volume controls and mute. Reduced-motion settings disable camera shake and dash ghosts. Losing focus pauses the run.
+
+## Optional HR Fun Friday
+
+At pink booths on floors 2, 4 and 5, use E to play **Clap for the Culture**. Read the instruction, then press Start Activity. Land three of five claps in the mint timing zone to get −25 BS, one coffee, twelve seconds of HR distraction and accuracy points. Failure adds eight BS. Booths are single-use per floor.
+
+The office simulation pauses while the activity runs, including the lift; the activity's time is added to your score clock. Menu practice has its own local best and does not change campaign progress.
+
+## Scores and replay
+
+The base score rewards time, never being spotted/caught, laptop recovery, limited credited distractions and low final BS. Each actual hazard/HR-charge dodge adds **125 points**; HR activity adds twice its accuracy points. Bronze, Silver, Gold and Ghost Employee medals, local personal bests, thirteen achievements and UTC-seeded daily challenges remain available.
+
+A failed run and pause-menu restart retain their opening seed, so retries let you learn rather than rerolling the problem. Replays after a win can vary. Old unlocks, achievements and audio settings are preserved; ruleset-2 campaign and daily scores use separate keys so old nine-second fetch-route records do not dominate the new game. There is no server leaderboard, anti-cheat or cloud save.
+
+## Build and test
+
+Node 22+ and npm. No secrets or environment configuration are required.
 
 ```sh
 npm ci
 npm run dev
-```
-
-Vite listens on port 4173. Open the URL printed by Vite on your own machine. This is a development URL, not a public deployment.
-
-```sh
 npm run typecheck
 npm test
 npm run build
 npm run preview
 ```
 
-Outputs:
-- `dist/`: conventional static website for Cloudflare Pages and other static hosts.
-- `release/office-escape.html`: self-contained, single-file game with no network dependencies.
-- `docs/index.html` and `docs/.nojekyll`: GitHub Pages-ready production output. Unlike other generated output, docs is intentionally committed for branch-based Pages hosting.
+Vite serves development on port 4173. That development address is not a public deployment.
 
-`dist` and `release` are generated and intentionally gitignored. Rebuild them from source. The game is approximately 1.9 MB uncompressed; most of that is Phaser and bundled open-source fonts. HTTP compression reduces the transfer considerably. Vite's large-chunk warning is expected: this project intentionally bundles the engine to eliminate a runtime CDN dependency.
+Build outputs:
+- `dist/`: ordinary static hosting output.
+- `release/office-escape.html`: portable offline single-file game.
+- `docs/index.html` and `docs/.nojekyll`: the same game prepared for branch-based GitHub Pages. `docs` is intentionally committed.
 
-## Controls
+The approximately 1.94 MB uncompressed release contains Phaser, fonts, artwork code, audio code and legal notices. The large-chunk warning is expected: runtime CDN dependency was deliberately avoided.
 
-| Action | Desktop | Touch |
-|---|---|---|
-| Move | WASD / arrow keys | Drag the virtual joystick |
-| Sprint | Hold Shift | Hold RUN |
-| Interact / hide | E / Space | ACT |
-| Coffee distraction | 1 | COFFEE |
-| Fake client call | 2 | CLIENT CALL |
-| Slack camouflage | 3 | BUSY |
-| Calendar blocker | 4 | CALENDAR |
-| VPN disconnect | 5 | VPN |
-| Emergency WFH | 6 | WFH |
-| Pause | Escape / pause button | Pause button |
-| Mute | M / sound button | Sound button |
-| Retry result | R / retry button | Retry button |
+```sh
+npx playwright install chromium
+npm run test:browser
+npm run test:release
+npm run test:campaign
+```
 
-Touch controls support simultaneous joystick movement and actions. Landscape gives a wider field of view; both orientations are playable. Mobile cameras follow the employee. On large desktop screens, the entire floor is visible. Settings provide independent music/SFX volume, mute and reduced camera effects. Audio begins only after a user gesture. Losing tab focus pauses the run.
+`CHROMIUM_PATH` optionally selects an existing Chromium executable. Otherwise Playwright uses its managed browser.
 
-## Five floors
+- **460 unit/data tests:** geometry, navigation, saves, RNG, maps, sixty-three encounter-director checks, seventy-two enemy checks, HR rhythm logic and legacy-score migration.
+- **21 browser journeys:** actual keyboard and touch dodges, arrow/WASD movement, windup/locked-aim behavior, warnings before hits, real hazard dodge credit, camping consequences, lift timing/boarding, optional sabotage, recovery, alternative WFH, loss/retry, settings, daily seed, responsive bounds and HR activity success/failure.
+- **Three offline production checks:** desktop plus portrait/landscape touch startup, input, dodge, coffee and pause with network disabled and no production QA helpers.
+- **Real-input production campaign:** the map-aware controller plays all five floors without positioning, health, timer or win hooks. It can attempt a floor at most three times, using actual optional sabotage after a failed attempt; failures are recorded, not hidden. Focused development runs may explicitly skip unlocks, but full production runs do not.
 
-1. **The Quick Sync** — A welcoming, partitioned desk/reception/pantry loop. Learn vision, coffee and hiding against a single manager.
-2. **Mandatory Fun Friday** — Cross party dividers, recover a confiscated badge and stop the playlist. HR, manager and gossip overlap their routes.
-3. **The Yappening** — Open-plan islands and two erratic, fast interns. Camouflage and calendar blockers join the toolkit.
-4. **The All-Hands Ambush** — Executive/conference routes, founder, product manager and shifting office events. VPN and a rare WFH alternative become available.
-5. **Founder Mode** — All six major threats, guarded reception and a separate purple WFH escape. Finish to reach the Bangalore street outside.
-
-Each map has its own geometry, objectives, furnishings, patrols and shortcuts. Locked gates are shortcuts, not unavoidable gates to required objectives. Optional laptops reward riskier detours. Coffee pickups and pantry breaks help recover from mistakes.
-
-## Stealth and enemy rules
-
-- Directional vision cones use wall/furniture-blocked line of sight. A filling awareness ring provides more than a second of grace before pursuit.
-- The finite-state machine supports patrol, investigation, chase, search and distraction. Enemies use radius-inflated A* navigation and the same swept collision rules as the player.
-- Sprinting can be heard nearby if there is a clear acoustic path. Production incidents mask sprint noise.
-- Breaking sight loses pursuit after a search; designated purple hide rings break sight immediately. Moving exits hiding and cancels Slack camouflage.
-- Getting caught adds Corporate BS, not conventional health. There is a three-second global escape grace period. At 100 BS, you are promoted to staying late.
-- Manager: scheduled desk patrols, occasional Slack stops, susceptible to urgent blockers.
-- HR: broader vision and forced-fun event rings. The pink ring builds BS; walk around it, hide or block meetings.
-- Intern: fastest patrol speed, unpredictable route changes, nearby yap slows movement. Fake calls do not help. Listen to all four monologue parts to earn Yappologist.
-- Founder: longest vision, largest catch penalty, ignores fake calls. All Hands temporarily expands office awareness and redirects patrols.
-- PM: scope events briefly delay the elevator. The VPN ability cancels the delay; the detailed roadmap distracts PM.
-- Gossip: broadcasts a discovered employee's location to nearby enemies and offers occasional useful pantry information.
-
-No enemy teleports or walks through desks. Distraction stations deliberately provide strong, readable counters to enemy personalities.
-
-## Ability balance
-
-| Ability | First floor | Effect | Limits |
-|---|---:|---|---|
-| Coffee | 1 | Toss ahead; enemies within hearing range investigate for 7s | 2 starting cups, max 5, 3s cooldown; pickups/stations refill |
-| Fake client call | 2 | Managers, HR, PM and gossip defer for 7s | 24s cooldown; intern/founder ignore it |
-| Slack camouflage | 3 | Avoid vision and interactions while stationary for 8s | Movement cancels; 18s cooldown |
-| Calendar blocker | 3 | Reject catches for 7s, even moving | Suspicion remains; 28s cooldown |
-| VPN disconnect | 4 | Freeze enemies and cancel office events for 5s | 35s cooldown |
-| Emergency WFH | 4 | Open that floor's alternate purple exit | Requires rare house pickup; badge and switch still required |
-
-Pantry coffee restores 18 BS, fills stamina and adds a cup, with a 22s station cooldown. Hiding slowly reduces BS. Single-use thematic distractions reduce BS and occupy their target personality for 10s. Scoring caps distraction credit to discourage farming.
-
-## Scores, medals and daily challenges
-
-Score = 2 × HR activity accuracy points + 5000 + max(0, 2 × floor par − seconds) × 35 + 2500 if never spotted + 1500 if never caught + 300 per laptop + 150 per distraction (max 6) − 18 per final BS − 180 per spotting, rounded with a 100-point minimum.
-
-- **Ghost Employee:** no sightings or catches, and within 1.5× the floor par time.
-- **Gold:** 9500+ if not eligible for Ghost.
-- **Silver:** 6500+.
-- **Bronze:** completed the floor.
-
-Daily challenge dates use **UTC**, not the device's local calendar day. Everyone gets the same date-selected floor and initial seed. The simulation uses a fixed 60 Hz step, an explicit PRNG and equal starting resources. Identical input sequences produce identical simulation choices; player choices naturally change future behavior. Best scores and achievements live in LocalStorage. **There is no server leaderboard or anti-cheat service**. Share text results to compare on the honor system.
-
-Campaign unlocks do not apply to the daily challenge, and daily wins do not skip campaign floors. Storage failures/private browsing never prevent playing, although records may not persist.
+The previous Space/arrow default-prevention bug was found through browser input tests and fixed. See `QA-REPORT.md` for the actual final run evidence. Passing automated tests proves functionality, not that every person will find the game fun; more human playtesting remains valuable.
 
 ## Architecture
 
 ```
-src/
-  main.ts               HTML menus, overlays, touch input, lifecycle and audio settings
-  game/
-    scene.ts            Phaser scene, fixed-step run state, objectives, abilities and effects
-    enemy.ts            Six-personality enemy FSM, pursuit and investigation
-    logic.ts            Swept circle collision, LOS, A*, PRNG, score and medal functions
-    levels.ts           Five hand-authored maps and their interaction/patrol data
-    catalog.ts          Enemy tuning, comedy, events, ability and achievement definitions
-    fun.ts              Pure deterministic HR timing game and reward rules
-    progression.ts      Versioned LocalStorage, personal bests, unlocks and settings
-    types.ts            Shared typed data contracts
-  art/art.ts            Original pixel sprites and office renderer; static art is baked once
-  audio/audio.ts        Original WebAudio sequencer, synthesizers, foley and mix controls
-  ui/fun-ui.ts          Accessible, keyboard/touch HR activity with cleanup-safe timers
-  ui/style.css          Responsive non-overlapping information rail, map and control dock
-  ui/fonts.css          Self-contained font faces; no external font requests
-scripts/standalone.mjs   Inlines Vite's tested output into a single portable HTML file
+src/main.ts                  Menus, input, overlays, progression and lifecycle
+src/game/scene.ts            Fixed-step run, movement, abilities, lift interaction, effects
+src/game/director.ts         Pure seeded interference, warning/hit rules, lift/boarding clock
+src/game/render-incidents.ts World hazard telegraphs, HR charge cues and lift feedback
+src/game/enemy.ts            Patrol/investigate/chase/search FSM, HR locked-aim lunge
+src/game/logic.ts            Swept collision, LOS/FOV, radius-inflated A*, RNG, score
+src/game/levels.ts           Five office layouts, optional tactics and enemy routes
+src/game/catalog.ts          Tuning, dialogue, abilities and achievements
+src/game/progression.ts      Versioned local progress; separate ruleset-2 scores
+src/game/fun.ts              Pure five-beat HR activity
+src/ui/fun-ui.ts             HR activity controls and cleanup-safe animation
+src/art/art.ts               Original pixel sprites and once-baked office artwork
+src/audio/audio.ts           Original WebAudio music, synthesizers and foley
+src/ui/style.css             Non-overlapping responsive HUD/map/control layout
+scripts/standalone.mjs       Portable HTML and GitHub Pages packaging
 ```
 
-The default renderer is Phaser Canvas: for this asset style it is fast, reliable and does not need WebGL. Large static illustrations are baked into one floor texture. Dynamic sight cones are ray-clipped to collision geometry. Pathfinding is refreshed at bounded intervals instead of on every frame. No external game assets are fetched.
+Phaser Canvas is intentional for reliable software/mobile rendering. Static office illustrations are baked once. Dynamic hazards are bounded in number, navigation is refreshed at controlled intervals, and gameplay uses a fixed 60 Hz step.
 
-`window.__office` is a read-only QA snapshot, not a save editor. A separate positioning helper exists **only** in Vite development mode when opened with `?qa=1`. Vite removes it from production. It is used transparently by some browser integration tests; see below.
+`window.__office.snapshot()` is read-only inspection for QA. Positioning and seeded-start helpers exist only in Vite development mode with `?qa=1`; they are absent in the production release.
 
-## Tests and actual playtesting
+## Redeploy GitHub Pages
 
-```sh
-npm test                       # Vitest logic, maps, saves and enemy FSM
-npx playwright install chromium
-npm run test:browser           # Browser input, UI and integration smoke tests
-npm run build
-npm run test:release           # Offline, self-contained release; desktop + two touch viewports
-npm run test:campaign          # Complete all five floors with real inputs, no QA positioning
-```
+Use your existing repository and Pages setup. Pull the updated `main` branch and redeploy **`/docs`**. No new repository, account, workflow secret, API token or database is needed. This update does not alter repository visibility or hosting settings.
 
-On a machine with an existing Chromium, optionally set `CHROMIUM_PATH` to its executable. Otherwise Playwright uses its managed browser. The browser config starts Vite automatically.
+If setting up Pages for the first time, GitHub Settings → Pages → Deploy from a branch → `main` → `/docs` → Save. Use the actual HTTPS address GitHub returns. A GitHub Pages deployment is not claimed merely because build files were committed.
 
-The shipped test suite includes:
-- 325 executed unit/data tests: seeded RNG and UTC dates, geometry, anti-tunnelling collision, line of sight/FOV, A* clearance, scores/medals, storage and achievement deduplication, reachable map objectives with gates closed, valid enemy routes, detection grace, hiding/search transitions, hearing, call-specific immunity, gossip broadcasts, VPN stuns, calendar protection, distraction expiry and intern speed.
-- 20 executed Chromium browser journeys: menu and settings persistence, floor locks, achievements, collision and movement, pause/restart, a full first-floor escape using **only real keyboard movement** (no teleports), recovery and hiding, actual ability timers and effects, failure/retry, all four remaining floors' objective/exit rules, rare WFH victory, daily challenge and portrait mobile controls.
-- The isolated integration tests for floors 2–5 use development-only QA positioning. Separately, a full five-floor campaign traversal was executed against the production HTML using only movement and ability keys, with no QA positioning. Its automated controller has authored-map knowledge and opportunistically uses abilities; it is not described as a human difficulty study. All five layouts also pass collision-aware reachability tests.
-- Seven added browser journeys verify disjoint HUD/map/control bounds at four viewport sizes, HR practice scoring, in-world rewards/pausing, and failure consequences. Thirty pure HR timing/reward tests are included in the unit total.
-- Three additional packaged-release checks ran offline from the self-contained HTML: a full desktop keyboard escape, portrait joystick + coffee, and landscape joystick + coffee. No JavaScript errors; the mobile canvas matched its stage dimensions.
-- Desktop 1280×900, mobile portrait 390×844, and landscape 844×390 visual checks. Public HTTPS startup, movement and a narrow 390×844 pause dialog were also verified in an independent browser. Real physical iOS/Android hardware has not been tested.
+Future updates: build, test and commit both source and regenerated `docs/index.html`. Other static hosts can serve `dist`; `wrangler.toml` remains an optional Cloudflare configuration without credentials.
 
-See `QA-REPORT.md` for final execution counts, release checks and known limitations. Browser traces/screenshots are retained only on failures and are not committed.
+## Licenses and remaining limits
 
-## Deploy free to GitHub Pages
+Original sprites, office art, dialogue, layouts, sound and music are generated locally. Application source is MIT licensed. Phaser's MIT notice and Barlow Condensed / IBM Plex Mono SIL Open Font License notices are preserved in `licenses`, hosted builds and the portable file. No remote image/audio/font service is required during play.
 
-The same repository now contains a ready-to-publish docs folder. No additional repository, external account, workflow permission or API token is needed for branch-based publication.
-
-1. Open this repository on GitHub and go to **Settings → Pages**.
-2. Under **Build and deployment**, choose **Deploy from a branch**.
-3. Select branch **main**, folder **/docs**, then **Save**.
-4. GitHub will display the actual HTTPS address when the Pages build completes. Open that returned address and verify CLOCK OUT, movement, HR FUN FRIDAY and pause.
-
-The connected GitHub integration can commit the source and production files, but it does not expose Pages administration and the browser session is not signed in. This one-time owner setting remains pending; no GitHub Pages URL or deployment success is invented. Do not change repository visibility without the owner’s separate consent if GitHub requires it.
-
-Future source changes: run npm run build, test the game, and commit the regenerated docs/index.html together with source. GitHub Pages will republish that branch automatically once enabled. The self-contained Pages file avoids repository-subpath asset failures.
-
-## Optional: Cloudflare Pages
-
-Cloudflare is not connected in the build environment, so no Cloudflare production deployment is claimed.
-
-### Git integration (recommended)
-
-1. Sign in to Cloudflare Dashboard and open **Workers & Pages → Create application → Pages → Connect to Git**.
-2. Select `rohanreddymelachervu/The-Great-Corporate-Escape-` and branch `main`. Do not create a second repository.
-3. Framework preset: **None**. Root directory: repository root.
-4. Build command: `npm ci && npm run build`.
-5. Build output directory: `dist`. Set `NODE_VERSION` to `22` if Cloudflare does not select it automatically.
-6. Deploy. Open the HTTPS `pages.dev` address Cloudflare actually returns and test CLOCK OUT, movement, sound, pause and the daily challenge. No secrets or backend bindings are required.
-
-### Direct upload
-
-Build locally using `npm ci && npm run build`, or use the accompanying production archive. In Cloudflare Pages, create a **Direct Upload** project and upload the contents of `dist`, ensuring `index.html` is at the upload root. There is no need to upload source or `node_modules`.
-
-If you already use Wrangler on your own machine:
-
-```sh
-npx wrangler login
-npx wrangler pages deploy dist --project-name the-great-office-escape
-```
-
-Wrangler authentication remains on your machine. Do not put API tokens in the repository or chat. `wrangler.toml` declares the static output directory, not credentials.
-
-Any ordinary static HTTPS host can serve `dist`. The single-file `release/office-escape.html` can be used for a portable initial release. Use a host's returned production address, not a Vite development URL.
-
-## Assets and licensing
-
-- Original programmatic office art, sprites, dialogue, level layouts, sound effects and music were created for this game; no image or audio CDN is used.
-- Application source is MIT licensed; see `LICENSE`.
-- Phaser 3 is MIT licensed, © Photon Storm Ltd. Its distributed license banner remains in the production JavaScript; see `licenses/Phaser-MIT.txt`.
-- Embedded Barlow Condensed (Google Fonts / Jeremy Tribby) and IBM Plex Mono (IBM) are distributed under SIL Open Font License 1.1. Full notices are retained in `licenses/`.
-- npm build/test tools are development dependencies, not runtime services. Their license metadata remains in `package-lock.json` and installed packages.
-
-## Honest limitations
-
-This is a compact indie arcade release, not a long narrative RPG. Optimal, map-aware routes can clear individual floors in roughly 9–20 seconds, so the requested 1–4 minute pacing is not enforced; exploratory and collectible runs take longer. Its sprites have movement bob/flip animations rather than full multi-frame directional animation sheets. Some furniture is decorative and room labels are intentionally restrained for readable stealth. Audio and mobile integration were tested in Chromium, not every browser/device. Share-sheet and clipboard permissions can vary; a selectable text fallback is provided. Progress belongs to each browser/origin, so it does not transfer between an embedded preview, public host and different devices. Daily scores are comparable starting conditions, not a verified online competition. No Cloudflare deployment is claimed until an authenticated account deploys it.
+Physical iOS/Android hardware and Safari/Firefox have not been tested. Daily competition and saves remain local/honor-system. Characters use expressive static sprites, bob/flip movement and dash ghosts rather than full directional animation sheets. This is a compact arcade-stealth survival game, not a long narrative RPG. A map-aware controller clears floors faster than a first-time exploratory player; pacing and subjective enjoyment still need human feedback.

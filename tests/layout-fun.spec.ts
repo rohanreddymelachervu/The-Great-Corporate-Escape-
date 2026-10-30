@@ -100,7 +100,7 @@ test("HR bonus game is immediately playable and has real timing, score and best 
   page,
 }) => {
   await load(page);
-  await page.getByRole("button", { name: "HR FUN FRIDAY" }).click();
+  await page.getByRole("button", { name: "CLAP PRACTICE" }).click();
   await expect(
     page.getByRole("heading", { name: "CLAP FOR THE CULTURE." }),
   ).toBeVisible();

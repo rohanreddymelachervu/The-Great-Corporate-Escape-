@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { ABILITIES, ACHIEVEMENTS, ENEMIES, EVENTS } from "../src/game/catalog";
+import { EscapeDirector, liftWait } from "../src/game/director";
 import { LEVELS } from "../src/game/levels";
 import { Navigator, blocked, center, dist, move } from "../src/game/logic";
 import type { Kind, Level, Point, Rect } from "../src/game/types";
@@ -79,6 +80,58 @@ describe("five-floor campaign and difficulty/personality progression", () => {
       ),
     ).toBe(true);
   });
+  it("has five distinct collision layouts, not just renamed floors or relocated collectibles", () => {
+    // Ignore labels, IDs, colors, and rectangle ordering when comparing geometry.
+    const geometry = (rects: Rect[]) =>
+      rects.map(({ x, y, w, h }) => JSON.stringify([x, y, w, h])).sort();
+    const layouts = LEVELS.map((level) =>
+      JSON.stringify({
+        width: level.width,
+        height: level.height,
+        walls: geometry(level.walls),
+        props: geometry(level.props),
+        gates: geometry(level.gates),
+      }),
+    );
+    expect(new Set(layouts).size).toBe(5);
+  });
+  it("keeps real, optional Fun Friday stations on floors 2, 4, and 5", () => {
+    expect(
+      LEVELS.filter((level) =>
+        level.interactions.some((interaction) => interaction.type === "fun"),
+      ).map((level) => level.id),
+    ).toEqual([2, 4, 5]);
+    for (const level of LEVELS.filter((level) =>
+      [2, 4, 5].includes(level.id),
+    )) {
+      const station = level.interactions.find(
+        (interaction) => interaction.id === `l${level.id}-fun-friday`,
+      );
+      expect(station, `floor ${level.id} Fun Friday`).toMatchObject({
+        type: "fun",
+      });
+      expect(level.required).not.toContain(station?.id);
+      // The per-target tests below also require this station to be reachable
+      // with every shortcut closed, like all other optional interactions.
+    }
+  });
+  it("includes telegraphed HR photo interference in the first floor's lift wait", () => {
+    const level = LEVELS[0];
+    const director = new EscapeDirector(level, "first-floor-hr");
+    director.callLift();
+    const events = director.update(liftWait(level.id), {
+      player: center(level.exit),
+      dashing: false,
+      hidden: false,
+      shield: true, // Isolate authored encounter availability from health policy.
+      vpn: false,
+    });
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "notice", kind: "photo" }),
+      ]),
+    );
+  });
   it("has globally unique pickup, interaction, and gate IDs, namespaced to their floor", () => {
     const ids: string[] = [];
     for (const level of LEVELS)
@@ -92,11 +145,14 @@ describe("five-floor campaign and difficulty/personality progression", () => {
       }
     expect(new Set(ids).size).toBe(ids.length);
   });
-  it("ramps enemy counts from a single manager tutorial to all six personalities", () => {
+  it("introduces both manager and HR on floor one, progressing to all six personalities", () => {
     expect(LEVELS.map((level) => level.enemies.length)).toEqual([
-      1, 3, 4, 4, 6,
+      2, 3, 4, 4, 6,
     ]);
-    expect(LEVELS[0].enemies.map((enemy) => enemy.kind)).toEqual(["manager"]);
+    expect(LEVELS[0].enemies.map((enemy) => enemy.kind).sort()).toEqual([
+      "hr",
+      "manager",
+    ]);
     expect(LEVELS[1].enemies.map((enemy) => enemy.kind).sort()).toEqual([
       "gossip",
       "hr",
@@ -251,26 +307,22 @@ for (const level of LEVELS) {
       }
     });
 
-    it("resolves a unique required badge and switch and every switch gate reference", () => {
-      expect(new Set(level.required).size).toBe(level.required.length);
-      const entities = [...level.items, ...level.interactions];
-      for (const id of level.required)
-        expect(
-          entities.filter((entity) => entity.id === id),
-          id,
-        ).toHaveLength(1);
-      expect(
-        level.items.filter(
-          (item) => item.kind === "badge" && level.required.includes(item.id),
-        ),
-      ).toHaveLength(1);
-      expect(
-        level.interactions.filter(
-          (interaction) =>
-            interaction.type === "switch" &&
-            level.required.includes(interaction.id),
-        ),
-      ).toHaveLength(1);
+    it("has no mandatory fetch objectives or badge pickups", () => {
+      expect(level.required).toEqual([]);
+      expect(level.items.filter((item) => item.kind === "badge")).toEqual([]);
+      expect(level.items.some((item) => item.kind === "coffee")).toBe(true);
+    });
+
+    it("keeps switches as optional sabotage and resolves every shortcut gate reference", () => {
+      const switches = level.interactions.filter(
+        (interaction) => interaction.type === "switch",
+      );
+      expect(switches.length).toBeGreaterThan(0);
+      for (const interaction of switches) {
+        expect(level.required).not.toContain(interaction.id);
+        expect(interaction.hint, interaction.id).toMatch(/optional sabotage/i);
+        expect(interaction.hint, interaction.id).not.toMatch(/required/i);
+      }
       for (const interaction of level.interactions) {
         expect(interaction.label && interaction.hint).toBeTruthy();
         if (interaction.type === "switch") {
@@ -353,27 +405,60 @@ for (const level of LEVELS) {
       });
     }
 
-    it("permits the complete required badge → switch → lift itinerary without opening shortcuts", () => {
-      let from = level.spawn;
-      const requiredPoints = level.required.map((id) => {
-        const entity = [...level.items, ...level.interactions].find(
-          (item) => item.id === id,
-        );
-        expect(entity, id).toBeDefined();
-        return entity!;
-      });
-      for (const destination of [...requiredPoints, center(level.exit)]) {
-        const path = nav.path(from, destination);
-        expect(
-          path.length,
-          JSON.stringify({ from, destination }),
-        ).toBeGreaterThan(0);
-        expect(path.at(-1)).toEqual(destination);
-        expect(clearanceErrors(from, path, obstacles, PLAYER_RADIUS)).toEqual(
-          [],
-        );
-        from = destination;
-      }
+    it("reaches and calls the lift, then offers timed boarding without collecting items or using switches", () => {
+      const lift = center(level.exit);
+      const path = nav.path(level.spawn, lift);
+      expect(
+        path.length,
+        "lift must be accessible with all gates closed",
+      ).toBeGreaterThan(0);
+      expect(path.at(-1)).toEqual(lift);
+      expect(
+        clearanceErrors(level.spawn, path, obstacles, PLAYER_RADIUS),
+      ).toEqual([]);
+
+      // Use the real, untouched level: no item removal, gate opening, required
+      // checklist mutation, or expedite call is needed to start the lift clock.
+      const director = new EscapeDirector(level, `floor-${level.id}-lift`);
+      expect(director.phase).toBe("find-lift");
+      expect(director.callLift()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: "notice", title: "LIFT CALLED" }),
+        ]),
+      );
+      expect(director.phase).toBe("waiting");
+      expect(director.eta).toBe(liftWait(level.id));
+      expect(director.eta).toBeGreaterThan(0);
+      expect(director.expedited).toBe(false);
+      const input = {
+        player: lift,
+        dashing: false,
+        hidden: false,
+        shield: true, // Test the map/director contract, not stationary survival.
+        vpn: false,
+      };
+      const interference = director.update(0, input);
+      expect(
+        interference.some((event) => event.type === "notice" && event.kind),
+      ).toBe(true);
+      expect(director.phase).toBe("waiting");
+      const arrival = director.update(liftWait(level.id), input);
+      expect(arrival.filter((event) => event.type === "arrived")).toHaveLength(
+        1,
+      );
+      expect(director.phase).toBe("boarding");
+      expect(director.boardLeft).toBeGreaterThan(0);
+      expect(director.expedited).toBe(false);
+    });
+
+    it("allows optional sabotage to shorten the wait rather than unlock the lift", () => {
+      const director = new EscapeDirector(level, `floor-${level.id}-sabotage`);
+      expect(director.expedite()).toBe(7);
+      expect(director.phase).toBe("find-lift");
+      director.callLift();
+      expect(director.phase).toBe("waiting");
+      expect(director.eta).toBe(liftWait(level.id) - 7);
+      expect(director.expedite()).toBe(0);
     });
 
     it("navigates every cyclic patrol leg, not just patrol nodes, without wall clipping", () => {

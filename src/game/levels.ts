@@ -1021,3 +1021,50 @@ for (const level of LEVELS) {
       hint: "E · HR activity. 3 good claps = −25 BS, +1 coffee, 12s distraction.",
     });
 }
+
+// Ruleset 2: escape the people, not a badge-and-switch fetch checklist.
+// Switches remain useful optional sabotage/priority tools; every lift can be called.
+const briefs = [
+  "Call the lift with E. HR will try to rope you into a team photo while it arrives. SPACE dodges.",
+  "HR is already looking for you. Call the lift, dodge the photo sweeps, and board before the doors close.",
+  "Two interns. Too many agents. Call the lift and keep moving through the purple yap zones.",
+  "Call the lift before the founder calls All Hands. Sabotage the stream or use VPN to buy breathing room.",
+  "Everyone wants your Friday. Call the lift, survive the final office hunt, or find a WFH token and use the purple exit.",
+];
+for (const level of LEVELS) {
+  level.required = [];
+  level.brief = briefs[level.id - 1];
+  level.tip =
+    "Gold arrow → lift. E to call. SPACE dodges. Pink/purple warning shapes tell you what is about to hit. Cover, coffee and side switches are real counterplay.";
+  level.par = 50 + level.id * 10;
+  for (const i of level.interactions)
+    if (i.type === "switch") {
+      i.hint =
+        "E · Optional sabotage. Bring the lift 7s sooner and distract this floor’s main nuisance.";
+      if (level.id === 1) i.label = "Priority lift override";
+    }
+}
+LEVELS[0].enemies.push({
+  kind: "hr",
+  x: 1040,
+  y: 500,
+  route: [
+    { x: 820, y: 400 },
+    { x: 1040, y: 400 },
+    { x: 1040, y: 720 },
+    { x: 820, y: 720 },
+  ],
+});
+// Cover close to the lift is useful, but hiding lasts six seconds, not forever.
+LEVELS[0].interactions.push({
+  id: "l1-coat-hide",
+  type: "hide",
+  x: 1040,
+  y: 240,
+  label: "Behind the reception coat rack",
+  hint: "E · Hide briefly. You can hold your breath for six seconds.",
+});
+// A snack refill replaces the old compulsory badge pickup. The engineer is already wearing ID.
+for (const level of LEVELS)
+  for (const item of level.items)
+    if (item.kind === "badge") item.kind = "coffee";
