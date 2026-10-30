@@ -1,0 +1,3 @@
+name = "the-great-office-escape"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-30"

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#111827" />
+    <meta
+      name="description"
+      content="Friday. 4:59 PM. Your work is done. Escape five floors of startup culture in this free pixel-art stealth game."
+    />
+    <title>The Great Office Escape · 4:59 PM</title>
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <a
+          class="wordmark"
+          href="#"
+          id="home-link"
+          aria-label="Office Escape home"
+          ><span class="brand-icon">↗</span
+          ><span
+            >OFFICE<span class="wordmark-light">ESCAPE</span
+            ><small>BANGALORE · FRIDAY</small></span
+          ></a
+        >
+        <div id="top-status">
+          <span class="status-dot"></span> ALL SYSTEMS OPERATIONAL.
+          UNFORTUNATELY.
+        </div>
+        <div class="top-actions">
+          <button
+            id="sound-btn"
+            class="icon-btn"
+            title="Toggle audio (M)"
+            aria-label="Toggle audio"
+          >
+            SOUND ON</button
+          ><button
+            id="pause-btn"
+            class="icon-btn"
+            hidden
+            aria-label="Pause game"
+          >
+            Ⅱ</button
+          ><button id="settings-btn" class="icon-btn" aria-label="Settings">
+            ⚙
+          </button>
+        </div>
+      </header>
+      <main id="stage">
+        <div
+          id="game"
+          aria-label="Top-down office stealth game. Use WASD or arrow keys to move, E to interact, Shift to sprint, 1 to 6 for abilities."
+          role="application"
+          tabindex="0"
+        ></div>
+        <div id="menu" class="screen">
+          <div class="menu-shade"></div>
+          <div class="menu-copy">
+            <div class="eyebrow">
+              <span class="live-dot"></span> FRIDAY, BANGALORE. ONE MINUTE TO
+              FREEDOM.
+            </div>
+            <h1>THE GREAT<br />OFFICE <span>ESCAPE.</span></h1>
+            <div class="clock-lockup">
+              <span class="digital">4<span class="clock-colon">:</span>59</span
+              ><span class="pm-tag"
+                >PM<span>DON’T<br />GET SYNCED.</span></span
+              >
+            </div>
+            <p class="tagline">
+              You’ve finished your work.<br />Unfortunately,
+              <em>nobody else has.</em>
+            </p>
+            <div class="menu-buttons">
+              <button id="play-btn" class="primary">
+                CLOCK OUT <span>↗</span></button
+              ><button id="daily-btn" class="secondary">
+                DAILY ESCAPE <span>↻</span>
+              </button>
+            </div>
+            <div class="menu-links">
+              <button id="floors-btn">CHOOSE FLOOR <span>01—05</span></button
+              ><button id="achievements-btn">
+                ACHIEVEMENTS <span id="achievement-count">0/12</span></button
+              ><button id="how-btn">HOW TO ESCAPE ↗</button>
+            </div>
+            <div class="controls-mini">
+              <kbd>WASD</kbd> MOVE <i>·</i> <kbd>SHIFT</kbd> SPRINT <i>·</i>
+              <kbd>E</kbd> INTERACT<span class="mobile-note"
+                >TOUCH CONTROLS AVAILABLE · LANDSCAPE RECOMMENDED</span
+              >
+            </div>
+          </div>
+          <div class="menu-office-note">
+            <span class="note-line"></span
+            ><span>YOUR OFFICE.<br /><b>YOUR FINAL BOSS.</b></span>
+          </div>
+          <div class="menu-stamp">
+            <span class="status-dot"></span> NO OVERTIME. JUST ONE MORE TRY.
+          </div>
+        </div>
+        <div id="hud" hidden>
+          <div class="hud-top">
+            <div class="floor-heading">
+              <span id="floor-num">FLOOR 01</span
+              ><strong id="floor-name">The Quick Sync</strong>
+              <div id="objectives"></div>
+            </div>
+            <div class="run-clock">
+              <small id="run-mode">FRIDAY ESCAPE</small
+              ><strong id="timer">00:00</strong>
+            </div>
+            <div class="meter-group">
+              <div class="meter-label">
+                CORPORATE BS <strong id="bs-value">0%</strong>
+              </div>
+              <div class="meter"><div id="bs-bar"></div></div>
+              <div class="stamina-row">
+                <span>STAMINA</span>
+                <div class="mini-meter"><div id="stamina-bar"></div></div>
+              </div>
+            </div>
+          </div>
+          <div id="detection" hidden>YOU’RE BEING PERCEIVED. MOVE.</div>
+          <div class="hud-bottom">
+            <div class="field-status">
+              <span class="status-dot"></span
+              ><span id="field-status"
+                >YOU ARE PROFESSIONALLY UNAVAILABLE.</span
+              >
+            </div>
+            <div id="ability-bar"></div>
+            <div class="desktop-hint">
+              <span>WASD / ↑↓←→</span> MOVE <span>SHIFT</span> SPRINT
+              <span>E</span> INTERACT <span>ESC</span> PAUSE
+            </div>
+          </div>
+          <div id="touch-controls">
+            <div id="joystick" aria-label="Movement joystick">
+              <div id="stick"></div>
+              <span>MOVE</span>
+            </div>
+            <div class="touch-actions">
+              <button id="touch-sprint" aria-label="Hold to sprint">RUN</button
+              ><button id="touch-interact" aria-label="Interact">
+                E<br /><small>ACT</small>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="toast" role="status" aria-live="polite" hidden>
+          <span class="toast-sigil">!</span>
+          <div>
+            <strong id="toast-title"></strong>
+            <p id="toast-text"></p>
+          </div>
+        </div>
+        <div id="modal-root" hidden></div>
+      </main>
+      <footer id="footer">
+        <span>A STEALTH GAME ABOUT THE MOST DANGEROUS TIME OF THE WEEK.</span
+        ><span
+          >5 FLOORS <i>/</i> 6 CORPORATE THREATS <i>/</i> ZERO UNPAID
+          OVERTIME</span
+        >
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
