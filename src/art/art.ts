@@ -41,6 +41,15 @@ type Costume = {
   accent: string;
 };
 const costumes: Record<string, Costume> = {
+  staff: {
+    skin: "#c39173",
+    skinShade: "#94634e",
+    hair: "#302d40",
+    shirt: "#81a6b8",
+    shade: "#557589",
+    trouser: "#354b62",
+    accent: "#f3d196",
+  },
   player: {
     skin: "#c98e70",
     skinShade: "#976653",

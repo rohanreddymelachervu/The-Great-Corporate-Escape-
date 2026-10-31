@@ -1,4 +1,4 @@
-# THE GREAT OFFICE ESCAPE: 4:59 PM — Ruleset 2
+# THE GREAT OFFICE ESCAPE: 4:59 PM — Office Heist v2.1
 
 > You've finished your work. Unfortunately, nobody else has.
 
@@ -7,6 +7,30 @@ A client-side Phaser 3 + TypeScript + Vite office-escape game. No backend, accou
 **Preview:** https://hyperagent.com/s/0RA76fgitXB1NI7B7D0-mA
 
 **Deployable GitHub Pages build:** `docs/index.html` on `main`. The source and rebuilt `docs` are committed to the existing `rohanreddymelachervu/The-Great-Corporate-Escape-` repository. This update does not change hosting settings; redeploy your existing Pages setup from that folder.
+
+## New in v2.1: a bigger office, real loot and event cutaways
+
+All five floors are now **1600×1120**, twice the old world area. Ten enclosed meeting rooms connect to the existing office through new lounges, pantry areas, service corridors and broad doorways. Amber lights warn when meetings end; attendees physically walk out, can spot you and alert major enemies, ask one quick question, then walk back in. They do not teleport into hallways or detect through walls.
+
+**Every applied enemy, hazard or meeting-attendee hit plays its own animated cutaway:** forced HR photo, calendar ambush, intern AGENT chain, printer paperwork burial, founder inspiration, PM scope expansion, gossip location broadcast, or meeting-door interruption. Settings offers **Brief** (~1.3–1.6 seconds) and **Long haul** (~3.3–3.8 seconds). The office, lift and score clock pause during the scene. E, Space, Enter, Escape or Skip returns early after a short input guard. Reduced motion removes flashes and uses gentler motion. The already animated HR rhythm activity keeps its own result screen.
+
+### Optional heist loot
+
+Hold **E / ACT** while standing beside an object to steal it. Moving, releasing or leaving range cancels an incomplete theft. Snacks only need a tap. The bag is run-local: **escape to bank its points; a failed escape banks nothing.**
+
+| Object | Bag points | Hold | Risk / benefit |
+|---|---:|---:|---|
+| Office TV | 800 | 1.6s | Loud equipment alarm; bulky |
+| Coffee machine | 650 | 1.4s | Loud, bulky |
+| Innovation trophy | 400 | 0.8s | Clinks, adds weight |
+| Abandoned laptop | 300 | 0.65s | Portable, modest noise |
+| Mechanical keyboard | 220 | 0.55s | Its clickiness follows you |
+| Desk plant | 160 | 0.65s | Low noise; it wanted better culture too |
+| Snack stash | 100 | Tap | Quiet; −6 BS and +15 stamina |
+
+There are **45 new loot objects** across the floors, plus the existing laptops. Bulky loot is visibly carried, makes you easier to notice and reduces normal movement by up to 18%; the actual speed penalty is shown beside your bag value. Dodges still work at full burst speed. Slack cannot convincingly hide a television. Theft alarms reveal the theft's position to nearby colleagues, not every enemy on the map. Three extra achievements reward escaping with a TV, two snack stashes or 1,500 bag points.
+
+The gold navigation cue now follows reachable passageways rather than pointing straight through intervening walls. Only nearby meeting warnings reach the message rail, so a distant room cannot overwrite immediate player feedback.
 
 ## This is a different gameplay loop
 
@@ -70,7 +94,7 @@ The office simulation pauses while the activity runs, including the lift; the ac
 
 ## Scores and replay
 
-The base score rewards time, never being spotted/caught, laptop recovery, limited credited distractions and low final BS. Each actual hazard/HR-charge dodge adds **125 points**; HR activity adds twice its accuracy points. Bronze, Silver, Gold and Ghost Employee medals, local personal bests, thirteen achievements and UTC-seeded daily challenges remain available.
+The base score rewards time, never being spotted/caught, laptop recovery, limited credited distractions and low final BS. Each actual hazard/HR-charge dodge adds **125 points**; HR activity adds twice its accuracy points. Bronze, Silver, Gold and Ghost Employee medals, local personal bests, sixteen achievements and UTC-seeded daily challenges remain available.
 
 A failed run and pause-menu restart retain their opening seed, so retries let you learn rather than rerolling the problem. Replays after a win can vary. Old unlocks, achievements and audio settings are preserved; ruleset-2 campaign and daily scores use separate keys so old nine-second fetch-route records do not dominate the new game. There is no server leaderboard, anti-cheat or cloud save.
 
@@ -94,7 +118,7 @@ Build outputs:
 - `release/office-escape.html`: portable offline single-file game.
 - `docs/index.html` and `docs/.nojekyll`: the same game prepared for branch-based GitHub Pages. `docs` is intentionally committed.
 
-The approximately 1.94 MB uncompressed release contains Phaser, fonts, artwork code, audio code and legal notices. The large-chunk warning is expected: runtime CDN dependency was deliberately avoided.
+The approximately 1.97 MB uncompressed release contains Phaser, fonts, artwork code, audio code and legal notices. The large-chunk warning is expected: runtime CDN dependency was deliberately avoided.
 
 ```sh
 npx playwright install chromium
@@ -105,8 +129,8 @@ npm run test:campaign
 
 `CHROMIUM_PATH` optionally selects an existing Chromium executable. Otherwise Playwright uses its managed browser.
 
-- **460 unit/data tests:** geometry, navigation, saves, RNG, maps, sixty-three encounter-director checks, seventy-two enemy checks, HR rhythm logic and legacy-score migration.
-- **21 browser journeys:** actual keyboard and touch dodges, arrow/WASD movement, windup/locked-aim behavior, warnings before hits, real hazard dodge credit, camping consequences, lift timing/boarding, optional sabotage, recovery, alternative WFH, loss/retry, settings, daily seed, responsive bounds and HR activity success/failure.
+- **707 unit/data tests:** geometry, navigation, saves, RNG, maps, sixty-three encounter-director checks, seventy-two enemy checks, thirty-two meeting-traffic checks, twenty loot checks, HR rhythm logic and legacy-score migration.
+- **38 browser journeys:** actual keyboard and touch dodges, arrow/WASD movement, windup/locked-aim behavior, warnings before hits, real hazard dodge credit, camping consequences, lift timing/boarding, optional sabotage, recovery, alternative WFH, loss/retry, settings, daily seed, responsive bounds HR activity success/failure, all eight animated hit scenes, lethal-hit recovery, long-haul skipping, held theft, snack recovery, bank/loss rules and real meeting-room walkouts.
 - **Three offline production checks:** desktop plus portrait/landscape touch startup, input, dodge, coffee and pause with network disabled and no production QA helpers.
 - **Real-input production campaign:** the map-aware controller plays all five floors without positioning, health, timer or win hooks. It can attempt a floor at most three times, using actual optional sabotage after a failed attempt; failures are recorded, not hidden. Focused development runs may explicitly skip unlocks, but full production runs do not.
 
@@ -118,6 +142,9 @@ The previous Space/arrow default-prevention bug was found through browser input 
 src/main.ts                  Menus, input, overlays, progression and lifecycle
 src/game/scene.ts            Fixed-step run, movement, abilities, lift interaction, effects
 src/game/director.ts         Pure seeded interference, warning/hit rules, lift/boarding clock
+src/game/traffic.ts          Seeded meeting-room walkout/return, spotting and interruption
+src/game/loot.ts             Run-local bag, timed theft, points and carrying rules
+src/game/render-traffic.ts   Staff animation, clipped vision and amber doorway cues
 src/game/render-incidents.ts World hazard telegraphs, HR charge cues and lift feedback
 src/game/enemy.ts            Patrol/investigate/chase/search FSM, HR locked-aim lunge
 src/game/logic.ts            Swept collision, LOS/FOV, radius-inflated A*, RNG, score
@@ -126,6 +153,8 @@ src/game/catalog.ts          Tuning, dialogue, abilities and achievements
 src/game/progression.ts      Versioned local progress; separate ruleset-2 scores
 src/game/fun.ts              Pure five-beat HR activity
 src/ui/fun-ui.ts             HR activity controls and cleanup-safe animation
+src/ui/hit-scenes.ts         Eight original skippable animated hit cutaways
+src/art/loot.ts              Original pixel TVs, snacks, keyboards and other loot
 src/art/art.ts               Original pixel sprites and once-baked office artwork
 src/audio/audio.ts           Original WebAudio music, synthesizers and foley
 src/ui/style.css             Non-overlapping responsive HUD/map/control layout
@@ -148,4 +177,4 @@ Future updates: build, test and commit both source and regenerated `docs/index.h
 
 Original sprites, office art, dialogue, layouts, sound and music are generated locally. Application source is MIT licensed. Phaser's MIT notice and Barlow Condensed / IBM Plex Mono SIL Open Font License notices are preserved in `licenses`, hosted builds and the portable file. No remote image/audio/font service is required during play.
 
-Physical iOS/Android hardware and Safari/Firefox have not been tested. Daily competition and saves remain local/honor-system. Characters use expressive static sprites, bob/flip movement and dash ghosts rather than full directional animation sheets. This is a compact arcade-stealth survival game, not a long narrative RPG. A map-aware controller clears floors faster than a first-time exploratory player; pacing and subjective enjoyment still need human feedback.
+Physical iOS/Android hardware and Safari/Firefox have not been tested. Daily competition and saves remain local/honor-system. World characters use expressive sprites, bob/flip movement and dash ghosts rather than full directional animation sheets; hit cutaways add original staged character and object animation. This is a compact arcade-stealth survival game, not a long narrative RPG. A map-aware controller clears floors faster than a first-time exploratory player; pacing and subjective enjoyment still need human feedback.

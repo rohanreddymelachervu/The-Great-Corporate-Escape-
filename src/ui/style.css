@@ -1836,3 +1836,32 @@ img.fun-host {
     height: 52px;
   }
 }
+
+/* Heist UI remains outside the active playfield. */
+#bag-status {
+  color: #ffdfa1;
+  overflow-wrap: anywhere;
+}
+.dock-title {
+  color: #a9f4ce !important;
+}
+.setting-row select {
+  font: inherit;
+  max-width: 53%;
+  min-height: 44px;
+  padding: 7px;
+  background: #243448;
+  color: #f0eddf;
+  border: 1px solid #64748a;
+}
+@media (max-width: 600px) {
+  .dock-title {
+    display: none;
+  }
+  #bag-status {
+    font-size: 10px;
+  }
+  .touch-actions #touch-interact small {
+    font-size: 7px;
+  }
+}

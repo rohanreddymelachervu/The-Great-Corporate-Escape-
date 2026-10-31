@@ -15,10 +15,38 @@ export type Prop = Rect & {
     | "printer";
   color?: number;
 };
+export type LootKind =
+  "tv" | "snacks" | "keyboard" | "plant" | "trophy" | "coffee-machine";
 export type Item = Point & {
   id: string;
-  kind: "badge" | "laptop" | "coffee" | "wfh";
+  kind: "badge" | "laptop" | "coffee" | "wfh" | LootKind;
 };
+export interface MeetingRoom {
+  id: string;
+  name: string;
+  area: Rect;
+  door: Point;
+  inside: Point;
+  hall: Point;
+  initialDelay: number;
+  interval: number;
+  crowd: number;
+}
+export type HitKind =
+  | "photo"
+  | "meeting"
+  | "yap"
+  | "paper"
+  | "allhands"
+  | "scope"
+  | "gossip"
+  | "door";
+export interface HitEvent {
+  kind: HitKind;
+  damage: number;
+  title: string;
+  text: string;
+}
 export type Interaction = Point & {
   id: string;
   type: "hide" | "coffee" | "distraction" | "switch" | "fun";
@@ -51,6 +79,7 @@ export interface Level {
   required: string[];
   par: number;
   event: string;
+  rooms?: MeetingRoom[];
 }
 export type Ability = "coffee" | "call" | "slack" | "calendar" | "vpn" | "wfh";
 export type EnemyState =
@@ -79,6 +108,8 @@ export interface Result {
   funScore?: number;
   dodges?: number;
   ruleset?: number;
+  lootValue?: number;
+  stolen?: number;
   daily: boolean;
   seed: string;
 }
@@ -92,6 +123,7 @@ export interface SaveData {
     sfx: number;
     mute: boolean;
     reducedMotion: boolean;
+    hitScenes: "brief" | "long";
   };
   dailyBests: Record<string, number>;
 }

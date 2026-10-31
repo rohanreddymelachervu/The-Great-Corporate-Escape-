@@ -1068,3 +1068,313 @@ LEVELS[0].interactions.push({
 for (const level of LEVELS)
   for (const item of level.items)
     if (item.kind === "badge") item.kind = "coffee";
+
+// Ruleset 3 annexes are added to the authored cores, not scaled copies. Old
+// pickups, hide spots, sabotage stations, WFH exits and furniture stay put.
+// The former perimeter becomes short divider islands with several 176px+
+// crossings; both the east and south wings are part of the same office.
+type AnnexPlan = {
+  rooms: { name: string; area: Rect; doorSide: "west" | "north" }[];
+  lounge: Rect;
+  pantry: Rect;
+  bottomDivider: number;
+};
+const annexPlans: AnnexPlan[] = [
+  {
+    rooms: [
+      {
+        name: "Quick Sync · no hard stop",
+        area: { x: 1240, y: 244, w: 336, h: 256 },
+        doorSide: "west",
+      },
+      {
+        name: "Alignment · the follow-up",
+        area: { x: 1240, y: 700, w: 336, h: 256 },
+        doorSide: "west",
+      },
+    ],
+    lounge: { x: 48, y: 832, w: 608, h: 240 },
+    pantry: { x: 704, y: 832, w: 400, h: 240 },
+    bottomDivider: 880,
+  },
+  {
+    rooms: [
+      {
+        name: "Culture Council · mandatory joy",
+        area: { x: 1240, y: 276, w: 336, h: 256 },
+        doorSide: "west",
+      },
+      {
+        name: "Retro · feelings on a sticky note",
+        area: { x: 624, y: 832, w: 432, h: 264 },
+        doorSide: "north",
+      },
+    ],
+    lounge: { x: 48, y: 832, w: 528, h: 240 },
+    pantry: { x: 1240, y: 580, w: 336, h: 208 },
+    bottomDivider: 400,
+  },
+  {
+    rooms: [
+      {
+        name: "Demo Debrief · one more question",
+        area: { x: 1240, y: 248, w: 336, h: 272 },
+        doorSide: "west",
+      },
+      {
+        name: "Rubber Duck · explain it again",
+        area: { x: 352, y: 832, w: 432, h: 264 },
+        doorSide: "north",
+      },
+    ],
+    lounge: { x: 832, y: 832, w: 352, h: 240 },
+    pantry: { x: 1240, y: 600, w: 336, h: 200 },
+    bottomDivider: 928,
+  },
+  {
+    rooms: [
+      {
+        name: "Investor Relations · pre-AMA",
+        area: { x: 1240, y: 320, w: 336, h: 256 },
+        doorSide: "west",
+      },
+      {
+        name: "Scope Review · the parking lot",
+        area: { x: 1240, y: 744, w: 336, h: 256 },
+        doorSide: "west",
+      },
+    ],
+    lounge: { x: 48, y: 832, w: 608, h: 240 },
+    pantry: { x: 704, y: 832, w: 400, h: 240 },
+    bottomDivider: 880,
+  },
+  {
+    rooms: [
+      {
+        name: "Board of Stakeholders · founder only",
+        area: { x: 1240, y: 224, w: 336, h: 288 },
+        doorSide: "west",
+      },
+      {
+        name: "War Room II · infinite runway",
+        area: { x: 640, y: 832, w: 464, h: 264 },
+        doorSide: "north",
+      },
+    ],
+    lounge: { x: 48, y: 832, w: 544, h: 240 },
+    pantry: { x: 1240, y: 600, w: 336, h: 192 },
+    bottomDivider: 384,
+  },
+];
+
+function appendMeetingRoom(
+  level: Level,
+  plan: AnnexPlan["rooms"][number],
+  index: number,
+): void {
+  const { area, name, doorSide } = plan;
+  const { x, y, w, h } = area;
+  // A real four-sided room with one permanently OPEN 120px doorway. There is
+  // deliberately no Gate here: amber warnings announce people, never a wall.
+  const west = doorSide === "west";
+  if (west) {
+    level.walls.push(
+      { x, y, w, h: 16 },
+      { x, y: y + h - 16, w, h: 16 },
+      { x: x + w - 16, y: y + 16, w: 16, h: h - 32 },
+      { x, y: y + 16, w: 16, h: h / 2 - 76 },
+      { x, y: y + h / 2 + 60, w: 16, h: h / 2 - 76 },
+    );
+  } else {
+    level.walls.push(
+      { x, y, w: 16, h },
+      { x: x + w - 16, y, w: 16, h },
+      { x: x + 16, y: y + h - 16, w: w - 32, h: 16 },
+      { x: x + 16, y, w: w / 2 - 76, h: 16 },
+      { x: x + w / 2 + 60, y, w: w / 2 - 76, h: 16 },
+    );
+  }
+  const id = `l${level.id}-meeting-${index + 1}`;
+  level.rooms!.push({
+    id,
+    name,
+    area,
+    door: west ? { x: x + 8, y: y + h / 2 } : { x: x + w / 2, y: y + 8 },
+    inside: west ? { x: x + 72, y: y + h / 2 } : { x: x + w / 2, y: y + 72 },
+    hall: west ? { x: x - 64, y: y + h / 2 } : { x: x + w / 2, y: y - 64 },
+    initialDelay: 4.5 + ((level.id + index * 2) % 5),
+    interval: 11 + ((level.id + index * 3) % 7),
+    crowd: level.id >= 4 || index === 1 ? 2 : 1,
+  });
+  level.zones.push({
+    x: x + 16,
+    y: y + 16,
+    w: w - 32,
+    h: h - 32,
+    label: `${name.toUpperCase()} · AMBER = STAFF EXIT`,
+    color: index === 0 ? 0xe8d6ba : 0xd9d4e9,
+  });
+  // The table is physical cover; loot is on free floor beside it. In
+  // particular, a TV is itself an object, NOT a point buried in a shelf.
+  level.props.push(
+    west
+      ? { x: x + 144, y: y + h / 2 - 28, w: 104, h: 56, kind: "table" }
+      : { x: x + w / 2 - 58, y: y + 140, w: 116, h: 54, kind: "table" },
+    { x: x + 40, y: y + 32, w: 104, h: 20, kind: "board" },
+  );
+  level.items.push(
+    {
+      id: `${id}-tv`,
+      kind: "tv",
+      x: x + w - 64,
+      y: west ? y + 56 : y + h - 56,
+    },
+    {
+      id: `${id}-${index === 0 ? "keyboard" : "trophy"}`,
+      kind: index === 0 ? "keyboard" : "trophy",
+      x: west ? x + 182 : x + 64,
+      y: y + h - 52,
+    },
+  );
+}
+
+for (const [index, level] of LEVELS.entries()) {
+  const plan = annexPlans[index];
+  level.width = 1600;
+  level.height = 1120;
+  level.exit = { x: 1490, y: 90, w: 80, h: 70 };
+  // The first four walls were the OLD 1120×800 outer boundary. Replacing all
+  // four also extends the north/west edges; no old full-height edge can seal
+  // the annex. The following short pieces preserve the old office outline.
+  level.walls.splice(
+    0,
+    4,
+    { x: 0, y: 0, w: level.width, h: 24 },
+    { x: 0, y: level.height - 24, w: level.width, h: 24 },
+    { x: 0, y: 24, w: 24, h: level.height - 48 },
+    { x: level.width - 24, y: 24, w: 24, h: level.height - 48 },
+  );
+  level.walls.push(
+    { x: 1096, y: 24, w: 24, h: 72 },
+    { x: 1096, y: 280, w: 24, h: 72 },
+    { x: 1096, y: 536, w: 24, h: 72 },
+    { x: 24, y: 776, w: 96, h: 24 },
+    { x: plan.bottomDivider, y: 776, w: 128, h: 24 },
+  );
+  // Retire old lift labels without touching any authored core zone geometry.
+  for (const zone of level.zones)
+    zone.label = zone.label.replace(/LIFT/g, "EAST WING →");
+  level.zones.push(
+    {
+      x: 1120,
+      y: 24,
+      w: 456,
+      h: 184,
+      label: "MAIN LIFT · CALL → SURVIVE → BOARD",
+      color: 0xcbdfea,
+    },
+    {
+      x: 1120,
+      y: 208,
+      w: 120,
+      h: 792,
+      label: "SERVICE CORRIDOR · TWO WAYS ROUND",
+      color: 0xd4e3dc,
+    },
+    { ...plan.lounge, label: "QUIET LOUNGE · CAMERA OFF", color: 0xd8e5c9 },
+    {
+      ...plan.pantry,
+      label: "PANTRY · TAKE A SNACK, NOT A MEETING",
+      color: 0xcbe5e0,
+    },
+  );
+  level.rooms = [];
+  plan.rooms.forEach((room, roomIndex) =>
+    appendMeetingRoom(level, room, roomIndex),
+  );
+
+  const lounge = plan.lounge,
+    pantry = plan.pantry;
+  level.props.push(
+    { x: 1280, y: 92, w: 128, h: 44, kind: "sofa" },
+    { x: 1416, y: 48, w: 28, h: 28, kind: "plant" },
+    {
+      x: lounge.x + 36,
+      y: lounge.y + lounge.h - 92,
+      w: 160,
+      h: 48,
+      kind: "sofa",
+    },
+    {
+      x: lounge.x + lounge.w - 144,
+      y: lounge.y + lounge.h - 108,
+      w: 80,
+      h: 40,
+      kind: "table",
+    },
+    { x: lounge.x + 36, y: lounge.y + 28, w: 140, h: 20, kind: "board" },
+    {
+      x: pantry.x + 32,
+      y: pantry.y + pantry.h - 68,
+      w: 120,
+      h: 32,
+      kind: "shelf",
+    },
+    {
+      x: pantry.x + pantry.w - 92,
+      y: pantry.y + 40,
+      w: 60,
+      h: 44,
+      kind: "coffee",
+    },
+    { x: 1160, y: 1040, w: 56, h: 40, kind: "printer" },
+  );
+  // Nine optional steals: three risky TVs, two quiet path-side snacks, and
+  // keyboard/trophy/plant/coffee-machine. None adds a mandatory fetch step.
+  level.items.push(
+    {
+      id: `l${level.id}-lounge-tv`,
+      kind: "tv",
+      x: lounge.x + lounge.w - 60,
+      y: lounge.y + 72,
+    },
+    {
+      id: `l${level.id}-lounge-plant`,
+      kind: "plant",
+      x: lounge.x + lounge.w - 56,
+      y: lounge.y + lounge.h - 44,
+    },
+    {
+      id: `l${level.id}-pantry-coffee-machine`,
+      kind: "coffee-machine",
+      x: pantry.x + 76,
+      y: pantry.y + 64,
+    },
+    { id: `l${level.id}-snacks-east`, kind: "snacks", x: 1176, y: 624 },
+    { id: `l${level.id}-snacks-south`, kind: "snacks", x: 240, y: 844 },
+  );
+  // Existing coffee/hiding interactions remain verbatim. New cover also makes
+  // the distant lift's wait a small loop rather than a featureless dead end.
+  level.interactions.push({
+    id: `l${level.id}-annex-hide`,
+    type: "hide",
+    x: 1350,
+    y: 176,
+    label: "The unbooked waiting area",
+    hint: "E · Hide beside the lift lounge sofa. Amber room lights mean staff are leaving.",
+  });
+  // Extend one established roamer into the wing without removing any core
+  // patrol nodes. All legs use the same collision-aware Navigator as pursuit.
+  const roamer = level.enemies.find(
+    (enemy) =>
+      enemy.kind === (level.id === 1 || level.id === 4 ? "hr" : "gossip"),
+  )!;
+  roamer.route.push(
+    { x: 1176, y: 660 },
+    { x: 1176, y: 180 },
+    { x: 1392, y: 180 },
+    { x: 1460, y: 210 },
+  );
+  level.tip +=
+    " The east and south annexes connect through broad passages. Meeting doors stay open; AMBER warns of staff walking out. TVs are optional risky detours.";
+}

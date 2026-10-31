@@ -177,6 +177,9 @@ export const ABILITIES: Record<
   },
 };
 export const ACHIEVEMENTS = [
+  {id:'tv',name:'Company Assets, Personal Weekend',text:'Escape with at least one stolen office TV.'},
+  {id:'snacks',name:'Snack Equity Vested',text:'Steal at least two snack stashes and escape.'},
+  {id:'heist',name:'Five-Finger Sprint Planning',text:'Escape with at least 1,500 loot points in your bag.'},
   {
     id: "ghost",
     name: "Professional Ghost",

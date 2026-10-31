@@ -1,0 +1,198 @@
+/* Local presentation layer only; it never resizes or styles the world canvas. */
+.hit-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 10px;
+  overflow: hidden;
+  background: rgb(10 16 29 / 84%);
+  color: #e3d8cf;
+  touch-action: none;
+  overscroll-behavior: contain;
+  font-family: "IBM Plex Mono", monospace;
+  isolation: isolate;
+}
+.hit-scene *,
+.hit-scene *::before,
+.hit-scene *::after {
+  box-sizing: border-box;
+}
+.hit-scene__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 640px;
+  min-width: 0;
+  min-height: 0;
+  height: min(370px, 100%);
+  max-height: 100%;
+  overflow: hidden;
+  border: 3px solid #a3f7cf;
+  background: #171c31;
+  box-shadow: 5px 5px 0 #f0868755;
+}
+.hit-scene__header {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 8px 13px 7px;
+  border-bottom: 2px solid #46516c;
+}
+.hit-scene__eyebrow {
+  display: block;
+  color: #a3f7cf;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.09em;
+}
+.hit-scene__header h2 {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: #e3d8cf;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(18px, 2.5vw, 25px);
+  font-weight: 800;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hit-scene__stage {
+  position: relative;
+  flex: 1 1 280px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: #101625;
+}
+/* Override game canvas sizing without touching the Phaser canvas. */
+#game .hit-scene canvas,
+.hit-scene__stage > canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 !important;
+  object-fit: contain;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+.hit-scene__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 11px;
+  border-top: 2px solid #46516c;
+  background: #171c31;
+}
+.hit-scene__copy {
+  flex: 1;
+  min-width: 0;
+}
+.hit-scene__caption {
+  margin: 0 0 4px;
+  color: #e3d8cf;
+  overflow: hidden;
+  font:
+    10px/1.3 "IBM Plex Mono",
+    monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hit-scene__hint {
+  margin: 0;
+  color: #a3f7cf;
+  font:
+    700 9px/1.4 "IBM Plex Mono",
+    monospace;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+.hit-scene__skip {
+  flex: 0 0 auto;
+  min-width: 63px;
+  min-height: 44px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 2px solid #f08687;
+  border-radius: 0;
+  background: #f08687;
+  color: #171c31;
+  font:
+    800 12px/1 "IBM Plex Mono",
+    monospace;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.hit-scene__skip:hover {
+  background: #e3d8cf;
+  border-color: #e3d8cf;
+}
+.hit-scene__skip:focus-visible {
+  outline: 2px solid #e3d8cf;
+  outline-offset: 3px;
+}
+.hit-scene__skip:active {
+  background: #a3f7cf;
+}
+/* Container queries respond to the GAME viewport, not the full browser window. */
+.hit-scene {
+  container-type: size;
+  container-name: hit-overlay;
+}
+@container hit-overlay (max-height: 280px) {
+  .hit-scene__header {
+    padding: 5px 10px;
+  }
+  .hit-scene__header h2 {
+    margin-top: 2px;
+    font-size: 18px;
+  }
+  .hit-scene__eyebrow {
+    font-size: 8px;
+  }
+  .hit-scene__footer {
+    padding: 5px 9px;
+    gap: 8px;
+  }
+  .hit-scene__caption {
+    font-size: 9px;
+    margin-bottom: 2px;
+  }
+  .hit-scene__skip {
+    min-height: 44px;
+  }
+}
+@container hit-overlay (max-width: 360px) {
+  .hit-scene__hint {
+    font-size: 8px;
+  }
+  .hit-scene__footer {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+  .hit-scene__skip {
+    min-width: 53px;
+    padding-inline: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hit-scene *,
+  .hit-scene *::before,
+  .hit-scene *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.hit-scene--reduced *,
+.hit-scene--reduced *::before,
+.hit-scene--reduced *::after {
+  animation: none !important;
+  transition: none !important;
+}

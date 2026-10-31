@@ -54,7 +54,7 @@
       <main id="stage">
         <div
           id="game"
-          aria-label="Top-down office stealth game. Use WASD or arrow keys to move, E to call the lift or use tools, Space to dodge, Shift to sprint, 1 to 6 for abilities."
+          aria-label="Top-down office stealth game. Use WASD or arrow keys to move, E to call the lift, use tools or hold to steal loot, Space to dodge, Shift to sprint, 1 to 6 for abilities."
           role="application"
           tabindex="0"
         ></div>
@@ -95,13 +95,13 @@
             <div class="menu-links">
               <button id="floors-btn">CHOOSE FLOOR <span>01—05</span></button
               ><button id="achievements-btn">
-                ACHIEVEMENTS <span id="achievement-count">0/13</span></button
+                ACHIEVEMENTS <span id="achievement-count">0/16</span></button
               ><button id="fun-practice-btn">CLAP PRACTICE</button
               ><button id="how-btn">HOW TO ESCAPE ↗</button>
             </div>
             <div class="controls-mini">
               <kbd>WASD</kbd> MOVE <i>·</i> <kbd>SHIFT</kbd> SPRINT <i>·</i>
-              <kbd>SPACE</kbd> DODGE <i>·</i> <kbd>E</kbd> CALL / USE<span
+              <kbd>SPACE</kbd> DODGE <i>·</i> <kbd>E</kbd> USE / STEAL<span
                 class="mobile-note"
                 >TOUCH CONTROLS AVAILABLE · LANDSCAPE RECOMMENDED</span
               >
@@ -112,7 +112,7 @@
             ><span>YOUR OFFICE.<br /><b>YOUR FINAL BOSS.</b></span>
           </div>
           <div class="menu-stamp">
-            <span class="status-dot"></span> RULESET 2 · CALL. DODGE. ESCAPE.
+            <span class="status-dot"></span> V2.1 · STEAL. DODGE. CLOCK OUT.
           </div>
         </div>
         <aside id="hud" hidden aria-label="Escape objectives and status">
@@ -160,12 +160,13 @@
         <section id="control-dock" hidden aria-label="Movement and abilities">
           <div class="dock-main">
             <div class="dock-label">
-              TACTICAL UNAVAILABILITY <span>YOUR UNLOCKED ABILITIES</span>
+              <span class="dock-title">TOOLS & ESCAPE</span
+              ><span id="bag-status">BAG 0 PTS</span>
             </div>
             <div id="ability-bar" aria-label="Available abilities"></div>
             <div id="desktop-hint" class="desktop-hint">
               <span>WASD / ↑↓←→</span> MOVE <span>SHIFT</span> SPRINT
-              <span>SPACE</span> DODGE <span>E</span> CALL / USE
+              <span>SPACE</span> DODGE <span>E</span> USE / HOLD TO STEAL
               <span>ESC</span> PAUSE
             </div>
           </div>
@@ -178,7 +179,7 @@
               <button id="touch-sprint" aria-label="Hold to sprint">RUN</button>
               <button id="touch-dash" aria-label="Dodge">DASH</button>
               <button id="touch-interact" aria-label="Interact">
-                E<br /><small>ACT</small>
+                E<br /><small>USE / HOLD</small>
               </button>
             </div>
           </div>

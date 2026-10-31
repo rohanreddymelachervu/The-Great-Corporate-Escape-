@@ -5,7 +5,13 @@ export const freshSave = (): SaveData => ({
   unlocked: 1,
   bests: {},
   achievements: [],
-  settings: { music: 0.35, sfx: 0.6, mute: false, reducedMotion: false },
+  settings: {
+    music: 0.35,
+    sfx: 0.6,
+    mute: false,
+    reducedMotion: false,
+    hitScenes: "brief",
+  },
   dailyBests: {},
 });
 export function load(): SaveData {

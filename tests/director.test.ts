@@ -483,7 +483,7 @@ describe("honest geometry and readable warnings", () => {
     for (const id of [1, 2, 3, 4, 5]) {
       for (const player of [
         { x: 0, y: 0 },
-        { x: 1120, y: 800 },
+        { x: LEVELS[id - 1].width, y: LEVELS[id - 1].height },
         { x: -99, y: Infinity },
       ]) {
         const { waves } = collectWaves(id, "edge-bounds", player, 5);
@@ -493,9 +493,9 @@ describe("honest geometry and readable warnings", () => {
               true,
             );
             expect(point.x).toBeGreaterThanOrEqual(0);
-            expect(point.x).toBeLessThanOrEqual(1120);
+            expect(point.x).toBeLessThanOrEqual(LEVELS[id - 1].width);
             expect(point.y).toBeGreaterThanOrEqual(0);
-            expect(point.y).toBeLessThanOrEqual(800);
+            expect(point.y).toBeLessThanOrEqual(LEVELS[id - 1].height);
           }
         }
       }

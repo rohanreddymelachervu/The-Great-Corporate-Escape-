@@ -29,6 +29,10 @@ async function position(p: Page, x: number, y: number) {
   await p.evaluate(([x, y]) => window.__office.qa.position(x, y), [x, y]);
   await p.waitForTimeout(60);
 }
+async function atLift(p: Page) {
+  const e = (await state(p)).exit;
+  await position(p, e.x, e.y);
+}
 function photoSeed() {
   for (let i = 0; i < 30; i++) {
     const seed = "photo-test-" + i,
@@ -57,7 +61,7 @@ test("menu explains the real loop and HR quick play starts an actual office esca
   );
   await page.getByRole("button", { name: "GOT IT. LEAVING." }).click();
   await page.getByRole("button", { name: "ACHIEVEMENTS" }).click();
-  await expect(page.locator(".achievement")).toHaveCount(13);
+  await expect(page.locator(".achievement")).toHaveCount(16);
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "DODGE HR" }).click();
   await page.waitForFunction(() => window.__office.snapshot().level === 2);
@@ -102,7 +106,7 @@ test("calling the lift starts a wait, not an instant badge-and-switch victory; p
 }) => {
   await ready(page);
   await start(page);
-  await position(page, 1015, 100);
+  await atLift(page);
   expect((await state(page)).phase).toBe("find-lift");
   await page.keyboard.press("e");
   await page.waitForFunction(
@@ -128,7 +132,7 @@ test("early interference gives warning before damage and punishes camping at the
 }) => {
   await ready(page, true);
   await start(page, 1, photoSeed());
-  await position(page, 1015, 100);
+  await atLift(page);
   await page.keyboard.press("e");
   await page.clock.runFor(700);
   let s = await state(page);
@@ -140,9 +144,11 @@ test("early interference gives warning before damage and punishes camping at the
   expect(s.bs).toBeGreaterThan(0);
   expect(s.phase).toBe("waiting");
   expect(
-    s.enemies.some(
-      (e: any) => e.state === "chase" || e.specialPhase !== "none",
-    ) || s.spots > 0,
+    s.hits > 0 ||
+      s.spots > 0 ||
+      s.enemies.some(
+        (e: any) => e.state === "chase" || e.specialPhase !== "none",
+      ),
   ).toBe(true);
 });
 
@@ -151,9 +157,9 @@ test("SPACE can dodge an actual moving HR photo sweep and earns a real score bon
 }) => {
   await ready(page, true);
   await start(page, 1, photoSeed());
-  await position(page, 1015, 100);
+  await atLift(page);
   await page.keyboard.press("e");
-  await page.clock.runFor(1700);
+  await page.clock.runFor(2400);
   const before = await state(page),
     beam = before.incidents.find((h: any) => h.kind === "photo");
   expect(beam).toBeTruthy();
@@ -183,9 +189,9 @@ test("HR visibly locks a photo-charge aim and a real dodge can evade the lunge",
   const p = candidates.find(
     (p) =>
       p.x > 35 &&
-      p.x < 1085 &&
+      p.x < s.width - 35 &&
       p.y > 35 &&
-      p.y < 765 &&
+      p.y < s.height - 35 &&
       !blocked(p, 13, s.obstacles) &&
       visible(hr, p, s.obstacles),
   );
@@ -217,7 +223,7 @@ test("the lift opens after the real countdown and boards without fetch requireme
 }) => {
   await ready(page, true);
   await start(page);
-  await position(page, 1015, 100);
+  await atLift(page);
   await page.keyboard.press("e");
   const safe = [
     { x: 90, y: 700 },
@@ -225,14 +231,14 @@ test("the lift opens after the real countdown and boards without fetch requireme
     { x: 1040, y: 720 },
     { x: 330, y: 240 },
   ];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 18; i++) {
     const s = await state(page);
     if (s.phase === "boarding") break;
     await position(page, safe[i % 4].x, safe[i % 4].y);
     await page.clock.runFor(2000);
   }
   expect((await state(page)).phase).toBe("boarding");
-  await position(page, 1015, 100);
+  await atLift(page);
   await page.clock.runFor(1000);
   await expect(
     page.getByRole("heading", { name: "OUT OF OFFICE." }),
@@ -265,7 +271,7 @@ test("side switches are optional sabotage and actually bring the lift sooner", a
   await page.keyboard.press("e");
   expect((await state(page)).used).toContain("l1-lift-switch");
   expect((await state(page)).phase).toBe("find-lift");
-  await position(page, 1015, 100);
+  await atLift(page);
   await page.keyboard.press("e");
   await page.waitForFunction(
     () => window.__office.snapshot().phase === "waiting",

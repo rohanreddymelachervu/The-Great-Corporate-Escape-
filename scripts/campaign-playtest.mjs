@@ -187,6 +187,15 @@ async function go(goal, { sprint = true, limit = 25000 } = {}) {
   const end = Date.now() + limit;
   while (Date.now() < end) {
     const s = await state();
+    if (s.cinematic) {
+      await keys([]);
+      await page.waitForSelector(".hit-scene", {
+        state: "detached",
+        timeout: 6000,
+      });
+      path = [];
+      continue;
+    }
     if (s.ended) {
       await keys([]);
       return false;
@@ -196,7 +205,10 @@ async function go(goal, { sprint = true, limit = 25000 } = {}) {
       return true;
     }
     if (!path.length || at >= path.length) {
-      path = new Navigator(1120, 800, s.obstacles, 12).path(s.pos, goal);
+      path = new Navigator(s.width, s.height, s.obstacles, 12).path(
+        s.pos,
+        goal,
+      );
       at = 0;
       if (!path.length) throw Error("No path to " + JSON.stringify(goal));
     }
@@ -225,8 +237,8 @@ async function go(goal, { sprint = true, limit = 25000 } = {}) {
 function safeGoal(s) {
   const exit = s.exit;
   const candidates = [];
-  for (let y = 90; y < 750; y += 100)
-    for (let x = 70; x < 1080; x += 110) {
+  for (let y = 90; y < s.height - 50; y += 100)
+    for (let x = 70; x < s.width - 50; x += 110) {
       const p = { x, y };
       if (
         blocked(p, 24, s.obstacles) ||
@@ -278,7 +290,7 @@ try {
       }
     }
     s = await state();
-    await go(s.exit);
+    await go(s.exit, { limit: 40000 });
     await keys([]);
     await page.keyboard.press("e");
     await page.waitForTimeout(80);
@@ -289,6 +301,14 @@ try {
     while (Date.now() < deadline) {
       s = await state();
       if (s.ended) break;
+      if (s.cinematic) {
+        await keys([]);
+        await page.waitForSelector(".hit-scene", {
+          state: "detached",
+          timeout: 6000,
+        });
+        continue;
+      }
       const current = LEVELS[level - 1];
       if (s.wfhActive && current.altExit) {
         await go(
@@ -328,9 +348,9 @@ try {
         ].find(
           (p) =>
             p.x > 35 &&
-            p.x < 1085 &&
+            p.x < s.width - 35 &&
             p.y > 35 &&
-            p.y < 765 &&
+            p.y < s.height - 35 &&
             !blocked(p, 14, s.obstacles),
         );
         if (flee) {

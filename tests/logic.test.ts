@@ -501,7 +501,13 @@ describe("fresh saves and storage (node-safe mocked localStorage)", () => {
       unlocked: 1,
       bests: {},
       achievements: [],
-      settings: { music: 0.35, sfx: 0.6, mute: false, reducedMotion: false },
+      settings: {
+        music: 0.35,
+        sfx: 0.6,
+        mute: false,
+        reducedMotion: false,
+        hitScenes: "brief",
+      },
       dailyBests: {},
     });
   });

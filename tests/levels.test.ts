@@ -4,10 +4,178 @@ import { ABILITIES, ACHIEVEMENTS, ENEMIES, EVENTS } from "../src/game/catalog";
 import { EscapeDirector, liftWait } from "../src/game/director";
 import { LEVELS } from "../src/game/levels";
 import { Navigator, blocked, center, dist, move } from "../src/game/logic";
-import type { Kind, Level, Point, Rect } from "../src/game/types";
+import type {
+  Kind,
+  Level,
+  LootKind,
+  Point,
+  Prop,
+  Rect,
+} from "../src/game/types";
 
 const PLAYER_RADIUS = 11;
 const NAV_RADIUS = 12; // Scene constructs Navigator with its default radius.
+const ACTOR_RADIUS = 14; // Staff and room door/inside/hall targets need this margin.
+const lootKinds: LootKind[] = [
+  "tv",
+  "snacks",
+  "keyboard",
+  "plant",
+  "trophy",
+  "coffee-machine",
+];
+const within = (point: Point, rect: Rect, inset = 0) =>
+  point.x > rect.x + inset &&
+  point.x < rect.x + rect.w - inset &&
+  point.y > rect.y + inset &&
+  point.y < rect.y + rect.h - inset;
+const distanceToRect = (point: Point, rect: Rect) =>
+  Math.hypot(
+    Math.max(rect.x - point.x, 0, point.x - rect.x - rect.w),
+    Math.max(rect.y - point.y, 0, point.y - rect.y - rect.h),
+  );
+// Regression fixtures are the original 1120×800 furniture footprints. None may
+// be shrunk, made decorative/non-collidable, moved, or cut away for the annex.
+const coreFurniture: [Prop["kind"], number, number, number, number][][] = [
+  [
+    ["desk", 80, 100, 180, 58],
+    ["sofa", 80, 360, 160, 54],
+    ["plant", 280, 460, 30, 30],
+    ["board", 55, 530, 160, 24],
+    ["desk", 440, 120, 180, 58],
+    ["desk", 440, 340, 180, 58],
+    ["coffee", 450, 630, 60, 44],
+    ["sofa", 850, 560, 150, 50],
+    ["shelf", 850, 160, 160, 40],
+  ],
+  [
+    ["table", 210, 100, 160, 50],
+    ["desk", 750, 100, 140, 55],
+    ["plant", 1020, 200, 30, 30],
+    ["table", 460, 350, 180, 40],
+    ["balloons", 990, 350, 32, 50],
+    ["desk", 420, 620, 180, 60],
+    ["sofa", 80, 580, 100, 50],
+    ["coffee", 650, 560, 50, 42],
+  ],
+  [
+    ["desk", 90, 370, 90, 55],
+    ["shelf", 70, 590, 100, 35],
+    ["plant", 210, 700, 30, 30],
+    ["desk", 380, 290, 180, 50],
+    ["desk", 480, 410, 140, 50],
+    ["desk", 850, 300, 150, 50],
+    ["desk", 850, 450, 150, 50],
+    ["table", 480, 80, 300, 55],
+    ["coffee", 400, 650, 50, 40],
+  ],
+  [
+    ["sofa", 80, 470, 130, 50],
+    ["desk", 90, 230, 140, 60],
+    ["board", 80, 70, 100, 24],
+    ["desk", 880, 370, 130, 60],
+    ["coffee", 880, 660, 60, 44],
+    ["table", 450, 350, 220, 70],
+    ["shelf", 450, 80, 60, 60],
+    ["desk", 480, 630, 140, 40],
+  ],
+  [
+    ["desk", 100, 200, 160, 55],
+    ["desk", 470, 100, 150, 55],
+    ["table", 470, 260, 150, 40],
+    ["desk", 860, 150, 150, 55],
+    ["sofa", 80, 580, 130, 55],
+    ["server", 430, 580, 60, 70],
+    ["desk", 570, 570, 120, 50],
+    ["desk", 870, 580, 140, 50],
+    ["coffee", 880, 680, 55, 35],
+  ],
+];
+// Preserve the existing coffee refill, hiding, and optional Fun Friday locations
+// used by controls/browser tests, including the late-floor alternative exits.
+const coreInteractions: [string, number, number][][] = [
+  [
+    ["hide", 190, 450],
+    ["filter", 550, 652],
+    ["blocker", 300, 270],
+    ["lift-switch", 650, 650],
+    ["coat-hide", 1040, 240],
+  ],
+  [
+    ["hide", 230, 580],
+    ["filter", 610, 580],
+    ["feedback", 400, 470],
+    ["rumour", 980, 310],
+    ["playlist-switch", 740, 400],
+    ["fun-friday", 350, 600],
+  ],
+  [
+    ["hide-nook", 210, 610],
+    ["hide-desk", 1045, 500],
+    ["filter", 365, 670],
+    ["pizza", 620, 170],
+    ["hot-take", 780, 600],
+    ["mute-switch", 620, 700],
+  ],
+  [
+    ["hide-reception", 250, 480],
+    ["hide-stage", 725, 440],
+    ["filter", 970, 680],
+    ["investor", 570, 300],
+    ["roadmap", 1040, 580],
+    ["stream-switch", 980, 630],
+    ["fun-friday", 250, 600],
+  ],
+  [
+    ["hide-wellness", 250, 610],
+    ["hide-server", 530, 600],
+    ["filter", 975, 710],
+    ["term-sheet", 810, 100],
+    ["jira", 640, 440],
+    ["appraisal", 100, 440],
+    ["roadmap-switch", 650, 680],
+    ["fun-friday", 280, 680],
+  ],
+];
+const corePickups: [string, number, number][][] = [
+  [
+    ["badge", 220, 240],
+    ["coffee-reception", 210, 650],
+    ["laptop-onboarding", 130, 470],
+    ["coffee-lift", 890, 430],
+    ["laptop-admin", 980, 260],
+  ],
+  [
+    ["badge", 200, 410],
+    ["coffee-snacks", 250, 680],
+    ["laptop-payroll", 680, 650],
+    ["coffee-party", 990, 470],
+    ["laptop-culture", 860, 190],
+  ],
+  [
+    ["badge", 140, 110],
+    ["coffee-intern", 130, 290],
+    ["laptop-demo", 430, 375],
+    ["coffee-overflow", 930, 640],
+    ["laptop-controls", 580, 630],
+  ],
+  [
+    ["badge", 170, 150],
+    ["laptop-reception", 230, 600],
+    ["coffee-boardroom", 420, 300],
+    ["coffee-stream", 950, 560],
+    ["laptop-scrum", 700, 740],
+    ["wfh", 950, 170],
+  ],
+  [
+    ["badge", 220, 100],
+    ["coffee-wellness", 300, 580],
+    ["laptop-build", 530, 190],
+    ["coffee-founder", 820, 300],
+    ["laptop-fire-exit", 1010, 680],
+    ["wfh", 1000, 440],
+  ],
+];
 const kinds: Kind[] = ["manager", "hr", "intern", "founder", "pm", "gossip"];
 const closedObstacles = (level: Level): Rect[] => [
   ...level.walls,
@@ -20,6 +188,11 @@ const targetPoints = (level: Level): { id: string; point: Point }[] => [
     id: `interaction ${item.id}`,
     point: item,
   })),
+  ...(level.rooms ?? []).flatMap((room) => [
+    { id: `room ${room.id} door`, point: room.door },
+    { id: `room ${room.id} inside`, point: room.inside },
+    { id: `room ${room.id} hall`, point: room.hall },
+  ]),
   { id: "main exit", point: center(level.exit) },
   ...(level.altExit ? [{ id: "WFH exit", point: center(level.altExit) }] : []),
 ];
@@ -94,6 +267,16 @@ describe("five-floor campaign and difficulty/personality progression", () => {
       }),
     );
     expect(new Set(layouts).size).toBe(5);
+    // The annexes themselves must also differ, not merely inherit distinct cores.
+    const annexLayouts = LEVELS.map((level) =>
+      JSON.stringify({
+        rooms: level.rooms!.map((room) => room.area),
+        props: geometry(
+          level.props.filter((prop) => prop.x >= 1120 || prop.y >= 800),
+        ),
+      }),
+    );
+    expect(new Set(annexLayouts).size).toBe(5);
   });
   it("keeps real, optional Fun Friday stations on floors 2, 4, and 5", () => {
     expect(
@@ -139,6 +322,7 @@ describe("five-floor campaign and difficulty/personality progression", () => {
         ...level.items,
         ...level.interactions,
         ...level.gates,
+        ...(level.rooms ?? []),
       ]) {
         expect(entity.id).toMatch(new RegExp(`^l${level.id}-`));
         ids.push(entity.id);
@@ -275,6 +459,237 @@ for (const level of LEVELS) {
     // Gates are intentionally all included, regardless of a future transient open flag.
     const obstacles = closedObstacles(level);
     const nav = new Navigator(level.width, level.height, obstacles);
+    const actorNav = new Navigator(
+      level.width,
+      level.height,
+      obstacles,
+      ACTOR_RADIUS,
+    );
+
+    it("is a doubled-area 1600×1120 office with a far-east main lift", () => {
+      expect([level.width, level.height]).toEqual([1600, 1120]);
+      expect(level.width * level.height).toBe(2 * 1120 * 800);
+      expect(level.exit).toEqual({ x: 1490, y: 90, w: 80, h: 70 });
+      if (level.id === 4)
+        expect(level.altExit).toEqual({ x: 40, y: 680, w: 80, h: 60 });
+      if (level.id === 5)
+        expect(level.altExit).toEqual({ x: 1000, y: 670, w: 70, h: 70 });
+    });
+
+    it("keeps every original core prop collidable and all coffee/hide/activity points unchanged", () => {
+      for (const [kind, x, y, w, h] of coreFurniture[level.id - 1]) {
+        const footprint = { kind, x, y, w, h };
+        expect(
+          level.props,
+          `original prop ${JSON.stringify(footprint)}`,
+        ).toContainEqual(footprint);
+        expect(blocked(center(footprint), ACTOR_RADIUS, obstacles)).toBe(true);
+        expect(x).toBeGreaterThanOrEqual(24);
+        expect(y).toBeGreaterThanOrEqual(24);
+        expect(x + w).toBeLessThanOrEqual(1096);
+        expect(y + h).toBeLessThanOrEqual(776);
+      }
+      for (const [suffix, x, y] of coreInteractions[level.id - 1])
+        expect(
+          level.interactions.find(
+            (point) => point.id === `l${level.id}-${suffix}`,
+          ),
+        ).toMatchObject({ x, y });
+      for (const [suffix, x, y] of corePickups[level.id - 1])
+        expect(
+          level.items.find((point) => point.id === `l${level.id}-${suffix}`),
+        ).toMatchObject({ x, y });
+      expect(level.items.filter((item) => item.kind === "coffee")).toHaveLength(
+        3,
+      );
+      expect(level.items.filter((item) => item.kind === "laptop")).toHaveLength(
+        2,
+      );
+    });
+
+    it("adds nine optional steals across all six new kinds, with quiet snacks and a TV in every room/lounge", () => {
+      const steals = level.items.filter((item) =>
+        lootKinds.includes(item.kind as LootKind),
+      );
+      expect(steals.length).toBeGreaterThanOrEqual(6);
+      expect(steals.length).toBeLessThanOrEqual(9);
+      expect(steals).toHaveLength(9);
+      expect(new Set(steals.map((item) => item.kind))).toEqual(
+        new Set(lootKinds),
+      );
+      expect(
+        steals.filter((item) => item.kind === "snacks").length,
+      ).toBeGreaterThanOrEqual(2);
+      expect(
+        steals.filter((item) => item.kind === "snacks").length,
+      ).toBeLessThanOrEqual(3);
+      for (const item of level.items) {
+        expect(["coffee", "laptop", "wfh", ...lootKinds]).toContain(item.kind);
+        expect(level.required).not.toContain(item.id);
+        expect(blocked(item, ACTOR_RADIUS, obstacles), item.id).toBe(false);
+        // Rectangle distance (not just center distance) protects E's lift priority.
+        expect(
+          distanceToRect(item, level.exit),
+          item.id,
+        ).toBeGreaterThanOrEqual(85);
+      }
+      const lounge = level.zones.find((zone) =>
+        zone.label.startsWith("QUIET LOUNGE"),
+      )!;
+      expect(lounge).toBeDefined();
+      expect(
+        level.zones.some((zone) => zone.label.startsWith("PANTRY ·")),
+      ).toBe(true);
+      expect(
+        level.zones.some((zone) => zone.label.startsWith("SERVICE CORRIDOR")),
+      ).toBe(true);
+      for (const area of [lounge, ...level.rooms!.map((room) => room.area)])
+        expect(
+          steals.some((item) => item.kind === "tv" && within(item, area, 16)),
+        ).toBe(true);
+    });
+
+    it("reaches every item with radius-14 swept clearance while all gates are closed", () => {
+      for (const item of level.items) {
+        const path = actorNav.path(level.spawn, item);
+        expect(path.at(-1), item.id).toEqual(item);
+        expect(
+          clearanceErrors(level.spawn, path, obstacles, ACTOR_RADIUS),
+          item.id,
+        ).toEqual([]);
+      }
+    });
+
+    it("connects core and annex in multiple directions without sealed old right/bottom borders", () => {
+      const crossings = [
+        [
+          { x: 1060, y: 180 },
+          { x: 1176, y: 180 },
+        ],
+        [
+          { x: 1060, y: 440 },
+          { x: 1176, y: 440 },
+        ],
+        [
+          { x: 1060, y: 660 },
+          { x: 1176, y: 660 },
+        ],
+        [
+          { x: 240, y: 744 },
+          { x: 240, y: 844 },
+        ],
+        [
+          { x: 720, y: 744 },
+          { x: 720, y: 812 },
+        ],
+      ];
+      for (const [from, to] of crossings) {
+        expect(clearanceErrors(from, [to], obstacles, ACTOR_RADIUS)).toEqual(
+          [],
+        );
+        expect(actorNav.path(level.spawn, to).at(-1)).toEqual(to);
+      }
+      expect(
+        level.walls.some(
+          (wall) => wall.x === 1096 && wall.y === 24 && wall.h === 752,
+        ),
+      ).toBe(false);
+      expect(
+        level.walls.some(
+          (wall) => wall.x === 0 && wall.y === 776 && wall.w === 1120,
+        ),
+      ).toBe(false);
+      expect(
+        level.enemies.some((enemy) =>
+          enemy.route.some((point) => point.x > 1120),
+        ),
+      ).toBe(true);
+    });
+
+    it("has two timed meeting rooms with real enclosing walls and permanently open 120px doorways", () => {
+      expect(level.rooms).toHaveLength(2);
+      expect(new Set(level.rooms!.map((room) => room.name)).size).toBe(2);
+      for (const room of level.rooms!) {
+        expect(room.name.trim()).not.toBe("");
+        expect(room.initialDelay).toBeGreaterThanOrEqual(4);
+        expect(room.initialDelay).toBeLessThanOrEqual(9);
+        expect(room.interval).toBeGreaterThanOrEqual(11);
+        expect(room.interval).toBeLessThanOrEqual(17);
+        expect([1, 2]).toContain(room.crowd);
+        expect(within(room.inside, room.area, ACTOR_RADIUS)).toBe(true);
+        expect(within(room.hall, room.area)).toBe(false);
+        const { x, y, w, h } = room.area;
+        const westDoor = room.door.x === x + 8;
+        // Probe every side's wall centerline: only the marked 120px opening
+        // is empty. Furniture/zones cannot stand in for actual room walls.
+        const perimeter: Point[] = [];
+        for (let dx = 8; dx < w; dx += 8)
+          perimeter.push({ x: x + dx, y: y + 8 }, { x: x + dx, y: y + h - 8 });
+        for (let dy = 8; dy < h; dy += 8)
+          perimeter.push({ x: x + 8, y: y + dy }, { x: x + w - 8, y: y + dy });
+        for (const point of perimeter) {
+          const onDoorSide = westDoor
+            ? point.x === room.door.x
+            : point.y === room.door.y;
+          const offset = westDoor
+            ? Math.abs(point.y - room.door.y)
+            : Math.abs(point.x - room.door.x);
+          if (onDoorSide && Math.abs(offset - 60) <= 1) continue;
+          expect(
+            blocked(point, 1, level.walls),
+            `${room.id} perimeter ${JSON.stringify(point)}`,
+          ).toBe(!(onDoorSide && offset < 60));
+        }
+        for (let offset = -40; offset <= 40; offset += 8) {
+          const point = westDoor
+            ? { x: room.door.x, y: room.door.y + offset }
+            : { x: room.door.x + offset, y: room.door.y };
+          expect(
+            blocked(point, ACTOR_RADIUS, obstacles),
+            `${room.id} open doorway`,
+          ).toBe(false);
+        }
+      }
+    });
+
+    it("connects every room's door, inside and hall at radius 14, in both directions with all gates closed", () => {
+      for (const room of level.rooms!) {
+        const pairs = [
+          [level.spawn, room.hall],
+          [room.hall, room.door],
+          [room.door, room.inside],
+          [room.inside, room.door],
+          [room.door, room.hall],
+          [room.hall, center(level.exit)],
+        ];
+        for (const point of [room.door, room.inside, room.hall]) {
+          expectInWorld(point, level, room.id, ACTOR_RADIUS);
+          expect(blocked(point, ACTOR_RADIUS, obstacles), room.id).toBe(false);
+        }
+        for (const [from, to] of pairs) {
+          const path = actorNav.path(from, to);
+          expect(
+            path.at(-1),
+            `${room.id} ${JSON.stringify(from)} -> ${JSON.stringify(to)}`,
+          ).toEqual(to);
+          expect(
+            clearanceErrors(from, path, obstacles, ACTOR_RADIUS),
+            room.id,
+          ).toEqual([]);
+        }
+        // The emergency walkout is a direct physical step, not a pathfinder
+        // teleport around a door that happens to be painted on a solid wall.
+        expect(
+          clearanceErrors(
+            room.inside,
+            [room.door, room.hall],
+            obstacles,
+            ACTOR_RADIUS,
+          ),
+          room.id,
+        ).toEqual([]);
+      }
+    });
 
     it("has finite, positive in-bounds geometry and fully enclosed outer walls", () => {
       expect(level.width).toBeGreaterThan(0);
@@ -284,6 +699,7 @@ for (const level of LEVELS) {
         ...level.props,
         ...level.gates,
         ...level.zones,
+        ...(level.rooms ?? []).map((room) => room.area),
         level.exit,
         ...(level.altExit ? [level.altExit] : []),
       ]) {
@@ -473,7 +889,7 @@ for (const level of LEVELS) {
           if (!path.length || dist(path.at(-1)!, end) > 0.001)
             errors.push(`${enemy.kind} ${index} leg ${leg}: unreachable`);
           errors.push(
-            ...clearanceErrors(start, path, obstacles, PLAYER_RADIUS).map(
+            ...clearanceErrors(start, path, obstacles, ACTOR_RADIUS).map(
               (error) => `${enemy.kind} ${index} leg ${leg}: ${error}`,
             ),
           );
